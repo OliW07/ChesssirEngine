@@ -35,13 +35,18 @@ struct BoardState{
 };
 
 void init(BoardState &state);
-void parseFenGameData(const std::string &fen, BoardState &state);
 void parseFenString(const std::string fen, BoardState &state);
 void visualiseBitBoard(const uint64_t &bitBoard);
 void visualiseGraphicBoard(BoardState state);
 void updatePieceBitBoards(BoardState &state);
 
-
+extern uint64_t KnightMoves[64];
+extern uint64_t KingMoves[64];
+extern uint64_t QueenMoves[64];
+extern uint64_t RookMoves[64];
+extern uint64_t BishopMoves[64];
+extern uint64_t whitePawnMoves[64];
+extern uint64_t blackPawnMoves[64];
 
 
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -53,7 +58,7 @@ int main(){
     BoardState playingBoard;
 
     init(playingBoard);
-    
+
     return 0;
 }
 
@@ -161,7 +166,13 @@ void visualiseBitBoard(const uint64_t &bitBoard){
     std::cout << "\n";
 
     for(int i = 0; i < 8; i++){
-        std::cout << bitString.substr(8*i, 8) << "\n";
+        std::string ss = bitString.substr(8*i, 8);
+
+        for(char c : ss){
+           std::cout << c << " ";
+        }
+
+        std::cout << "\n";
     }
 
     std::cout << "\n";
@@ -253,8 +264,8 @@ int convertLocationToRows(const int location){
 }
 
 int convertLocationToColumns(const int location){
-    if(location < 0 || location > 64){
-        throw std::runtime_error("Location is out of range");
+    if(location < 0 || location > 63){
+        throw std::runtime_error("Location "+std::to_string(location)+" is out of range");
     }
     return location%8;
 }
