@@ -41,7 +41,7 @@ void visualiseBitBoard(const uint64_t &bitBoard);
 void visualiseGraphicBoard(BoardState state);
 void updatePieceBitBoards(BoardState &state);
 
-int convertNotationToInt(const std::string &notation);
+
 
 
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -243,6 +243,20 @@ int convertNotationToInt(const std::string &notation){
 
     return (file + (rank-1)*8);
 
+}
+
+int convertLocationToRows(const int location){
+    if(location < 0 || location > 64){
+        throw std::runtime_error("Location is out of range");
+    }
+    return location/8;
+}
+
+int convertLocationToColumns(const int location){
+    if(location < 0 || location > 64){
+        throw std::runtime_error("Location is out of range");
+    }
+    return location%8;
 }
 
 void updatePieceBitBoards(BoardState &state){
