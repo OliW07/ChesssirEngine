@@ -5,10 +5,13 @@
 #include <string>
 #include <stdexcept>
 #include <sstream>
+#include <cstdint>
+
+#include "precompute.h"
 
 
 struct BoardState{
-    unsigned long long 
+    uint64_t
         whitePawnBitBoard = 0ULL,
         whiteKnightBitBoard = 0ULL,
         whiteBishopBitBoard = 0ULL,
@@ -34,7 +37,7 @@ struct BoardState{
 void init(BoardState &state);
 void parseFenGameData(const std::string &fen, BoardState &state);
 void parseFenString(const std::string fen, BoardState &state);
-void visualiseBitBoard(const unsigned long long &bitBoard);
+void visualiseBitBoard(const uint64_t &bitBoard);
 void visualiseGraphicBoard(BoardState state);
 void updatePieceBitBoards(BoardState &state);
 
@@ -45,26 +48,26 @@ const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w 
 
 
 
-
 int main(){
 
     BoardState playingBoard;
 
     init(playingBoard);
-
-    visualiseGraphicBoard(playingBoard);
     
     return 0;
 }
 
 void init(BoardState &state){
+
+    std::cout << "Initialising engine... \n";
     
     parseFenString(STARTING_FEN,state);
+    precomputeBitBoardMoves();
 }
 
 void parseFenString(std::string fen, BoardState &state){
 
-    unsigned long long boardIndex = 63;
+    uint64_t boardIndex = 63;
 
     for(int i = 0; i < fen.length(); i++){
 
@@ -78,7 +81,7 @@ void parseFenString(std::string fen, BoardState &state){
 
         }else if(std::isalpha(uCharacter)){
 
-            unsigned long long *pieceBitBoard = nullptr;
+            uint64_t *pieceBitBoard = nullptr;
 
             bool isWhite = std::isupper(uCharacter);
 
@@ -151,7 +154,7 @@ void parseFenString(std::string fen, BoardState &state){
               Debugger functions
 --------------------------------------------*/
 
-void visualiseBitBoard(const unsigned long long &bitBoard){
+void visualiseBitBoard(const uint64_t &bitBoard){
     std::bitset<64> boardBitSet(bitBoard);
     std::string bitString = boardBitSet.to_string();
 
