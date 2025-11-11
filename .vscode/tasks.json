@@ -8,7 +8,8 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${fileDirname}/main.cpp", 
-                "${fileDirname}/precomputeBitBoards.cpp",
+                "${fileDirname}/../data/precomputeBitBoards.cpp",
+                "${fileDirname}/../utils/utils.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],

@@ -142,8 +142,6 @@ void computePawnMoves(const int pos, bool isWhite){
 
     if(isWhite && convertLocationToRows(pos) == 1) whitePawnMoves[pos] |= (1ULL << (pos+16));
     else if(!isWhite && convertLocationToRows(pos) == 6) blackPawnMoves[pos] |= (1ULL << (pos-16));
-
-    //TODO: Add enpassant
     
 }
 
