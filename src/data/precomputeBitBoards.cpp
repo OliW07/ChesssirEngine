@@ -89,26 +89,19 @@ void computeKingMoves(const int pos){
 
 void computeQueenMoves(const int pos){
 
-    for(int i = 0; i < 64; i++){
-        QueenMoves[i] = (returnSlidingBitBoard(i,true) | returnSlidingBitBoard(i,false));
-    }
-
+    QueenMoves[pos] = (returnSlidingBitBoard(pos,true) | returnSlidingBitBoard(pos,false));
+    
 }
 
 void computeRookMoves(const int pos){
 
-    for(int i = 0; i < 64; i++){
-        RookMoves[i] = returnSlidingBitBoard(i,false);
-    }
-
+    RookMoves[pos] = returnSlidingBitBoard(pos,false);
 }
 
 void computeBishopMoves(const int pos){
 
-    for(int i = 0; i < 64; i++){
-        BishopMoves[i] = returnSlidingBitBoard(i,true);
-    }
-
+    BishopMoves[pos] = returnSlidingBitBoard(pos,true);
+    
 }
 
 void computePawnMoves(const int pos, bool isWhite){
