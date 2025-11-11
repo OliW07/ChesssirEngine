@@ -1,9 +1,0 @@
-[
-    {
-        "key": "f5",
-        "command": "workbench.action.debug.start",
-        "args": {
-            "config": "Run Chess Engine"
-        }
-    }
-]

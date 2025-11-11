@@ -17,11 +17,11 @@ Makefile
 *.cmake
 
 # IDE files
-.vscode/c_cpp_properties.json
-.vscode/*.code-workspace
-.vscode/.browse.vc.db
-.vscode/launch.json
-.vscode/tasks.json
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Image files
 *.jpg
