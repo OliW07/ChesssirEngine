@@ -51,6 +51,34 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "bitset": "cpp",
-        "sstream": "cpp"
-    }
+        "sstream": "cpp",
+        "precomputebitboards": "cpp"
+    },
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/src/data",
+        "${workspaceFolder}/src/utils",
+        "${workspaceFolder}/tools"
+    ],
+    "C_Cpp.default.cppStandard": "c++20",
+    "debug.node.autoAttach": "on",
+    "debug.terminal.clearBeforeReusing": true,
+    "debug.allowBreakpointsEverywhere": true,
+    "debug.internalConsoleOptions": "openOnSessionStart",
+    "debug.saveBeforeStart": "allEditorsInActiveGroup",
+    "debug.hideLauncherWhileDebugging": true,
+    "debug.showInStatusBar": "always",
+    "debug.console.closeOnEnd": false,
+    "C_Cpp.autocomplete": "default",
+    "C_Cpp.intelliSenseEngine": "default",
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.enhancedColorization": "enabled",
+
+    "C_Cpp.autocompleteAddParentheses": false,
+    "C_Cpp.intelliSenseEngineFallback": false,
+    "C_Cpp.preferredQuoteStyle": "single",
+    "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+    "cmake.configureOnOpen": true,
+    "cmake.debugConfig": {},
+    "cmake.buildBeforeRun": true
 }

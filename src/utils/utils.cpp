@@ -1,7 +1,7 @@
 #include <stdexcept>
 
-#include "Types.h"
 
+#include "utils/Types.h"
 
 
 int convertNotationToInt(const std::string &notation){

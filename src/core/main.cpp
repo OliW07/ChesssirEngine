@@ -8,9 +8,8 @@
 #include <cstdint>
 
 
-#include "../utils/Types.h"
-#include "../data/precompute.h"
-
+#include "data/precompute.h"
+#include "utils/Types.h"
 
 
 

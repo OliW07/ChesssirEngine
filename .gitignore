@@ -1,10 +1,44 @@
-# Ignore all
-*
+# Compiled files
+*.o
+*.a
+*.obj
+*.exe
+*.dll
+*.so
+*.out
+*.log
 
-# Unignore all with extensions
-!*.*
+# CMake build directories
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+*.cmake
 
-# Unignore all dirs
-!*/
+# IDE files
+.vscode/c_cpp_properties.json
+.vscode/*.code-workspace
+.vscode/.browse.vc.db
+.vscode/launch.json
+.vscode/tasks.json
 
-.jpg
+# Image files
+*.jpg
+*.png
+*.gif
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Temporary files
+*.tmp
+*.temp
+*~
