@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(ENGINE_SOURCES
     src/core/main.cpp
+    src/core/board.cpp
     src/utils/utils.cpp
     src/data/precomputeBitBoards.cpp
     tools/debug.cpp
