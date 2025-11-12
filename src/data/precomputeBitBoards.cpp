@@ -1,6 +1,9 @@
-#include "precompute.h"
+
 #include <iostream>
 #include <cmath>
+
+#include "precompute.h"
+#include "utils/Types.h"
 
 uint64_t KnightMoves[64] = {};
 uint64_t KingMoves[64] = {};

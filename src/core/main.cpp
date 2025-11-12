@@ -1,144 +1,84 @@
 #include <iostream>
 #include <cctype>
 #include <cmath>
-#include <bitset>
-#include <string>
-#include <stdexcept>
-#include <sstream>
-#include <cstdint>
 
 
+#include "board.h"
 #include "data/precompute.h"
 #include "utils/Types.h"
+#include "debug.h"
 
 
+void init(Board &boardInstance);
+void gameLoop(Board &boardInstance);
 
 
-
-void init(BoardState &state);
-void parseFenString(const std::string fen, BoardState &state);
-void visualiseBitBoard(const uint64_t &bitBoard);
-void visualiseGraphicBoard(BoardState state);
-void updatePieceBitBoards(BoardState &state);
-
-extern uint64_t KnightMoves[64];
-extern uint64_t KingMoves[64];
-extern uint64_t QueenMoves[64];
-extern uint64_t RookMoves[64];
-extern uint64_t BishopMoves[64];
-extern uint64_t whitePawnMoves[64];
-extern uint64_t blackPawnMoves[64];
-
-
-const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
+bool isPlaying = true;
 
 
 int main(){
 
-    BoardState playingBoard;
+    const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+    Board playingBoard(STARTING_FEN,true);
 
     init(playingBoard);
+
+    gameLoop(playingBoard); 
 
     return 0;
 }
 
-void init(BoardState &state){
+void init(Board &boardInstance){
 
     std::cout << "Initialising engine... \n";
     
-    parseFenString(STARTING_FEN,state);
     precomputeBitBoardMoves();
 }
 
-void parseFenString(std::string fen, BoardState &state){
+void gameLoop(Board &boardInstance){
 
-    uint64_t boardIndex = 63;
+    std::cout << "Chess Game Starting... \n";
 
-    for(int i = 0; i < fen.length(); i++){
+    while(isPlaying){
+        
+        
+        if(boardInstance.isAdversaryTurn()){
 
-        char character = fen[i];
-        char uCharacter = static_cast<unsigned char>(character);
+                std::string adversaryInput;
+
+                std::cout << "Enter your move: ";
+                std::cin >> adversaryInput;
+
+                std::cout << "\n";
+                
+                std::vector<int> moveData = convertAlgebraicNotationToMoves(adversaryInput);
+               
 
 
-        if(std::isdigit(uCharacter)){
-            boardIndex -= (uCharacter - '0');
-            continue;
+                if(moveData.empty()){
 
-        }else if(std::isalpha(uCharacter)){
+                    //Bad user input
+                    std::cout << "Error! Invalid algebraic notation, please try again \n";
+                    continue;
+                }
+                
+                boardInstance.makeMove(moveData[0],moveData[1],moveData[2]);
+                visualiseGraphicBoard(boardInstance.state);
+                //Move the piece on the board
 
-            uint64_t *pieceBitBoard = nullptr;
 
-            bool isWhite = std::isupper(uCharacter);
-
-            switch (std::tolower(uCharacter)) {
-                case 'r':
-                    pieceBitBoard = isWhite ? &state.whiteRookBitBoard : &state.blackRookBitBoard;
-                    break;
-                case 'n':
-                    pieceBitBoard = isWhite ? &state.whiteKnightBitBoard : &state.blackKnightBitBoard;
-                    break;
-                case 'b':
-                    pieceBitBoard = isWhite ? &state.whiteBishopBitBoard : &state.blackBishopBitBoard;
-                    break;
-                case 'q':
-                    pieceBitBoard = isWhite ? &state.whiteQueenBitBoard : &state.blackQueenBitBoard;
-                    break;
-                case 'k':
-                    pieceBitBoard = isWhite ? &state.whiteKingBitBoard : &state.blackKingBitBoard;
-                    break;
-                case 'p':
-                    pieceBitBoard = isWhite ? &state.whitePawnBitBoard : &state.blackPawnBitBoard;
-                    break;
-                default:
-                    throw std::runtime_error("Unknown piece character in FEN.");
-                        
-            }
-
-            *pieceBitBoard |= (1ULL << boardIndex);
-
-        }else if(uCharacter == '/'){
-            //Don't increment the counter as / is not representitive of a piece.
-            continue;
-        }else if(uCharacter == ' '){
-            //End of piece data in fen
-            fen = fen.substr(i+1);
-            break;
+        }else{
+            isPlaying = false;
         }
-
-        boardIndex -= 1;
-            
+        
+        boardInstance.state.whiteToMove = !boardInstance.state.whiteToMove;
     }
 
-    updatePieceBitBoards(state);
-
-    //Parse game data from the end of FEN string
-
-    std::stringstream tokens(fen);
-    std::string token;
-
-    tokens >> token;
-    state.whiteToMove = (token == "w");
-
-    tokens >> state.castlingRights;
-    
-    tokens >> token;
-
-    if(token == "-") state.enPassantSquare = -1;
-    else state.enPassantSquare = convertNotationToInt(token);
-
-    tokens >> state.halfMoveClock;
-    tokens >> state.fullMoveClock;
-
-
 
 }
 
 
-void updatePieceBitBoards(BoardState &state){
 
-    state.whitePieceBitBoard = state.whitePawnBitBoard | state.whiteBishopBitBoard | state.whiteKnightBitBoard | state.whiteQueenBitBoard | state.whiteKingBitBoard | state.whiteRookBitBoard;
-    state.blackPieceBitBoard = state.blackPawnBitBoard | state.blackBishopBitBoard | state.blackKnightBitBoard | state.blackQueenBitBoard | state.blackKingBitBoard | state.blackRookBitBoard;
 
-}
 

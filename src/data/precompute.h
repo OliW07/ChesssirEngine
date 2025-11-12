@@ -14,8 +14,6 @@ extern uint64_t blackPawnMoves[64];
 
 void precomputeBitBoardMoves();
 
-int convertNotationToInt(const std::string &notation);
-int convertLocationToRows(const int location);
-int convertLocationToColumns(const int location);
+
 
 #endif

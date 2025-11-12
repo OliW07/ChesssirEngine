@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 
 struct BoardState{
@@ -28,5 +30,24 @@ struct BoardState{
     int fullMoveClock = 0;
     std::string castlingRights = "";
 };
+
+const std::unordered_map<char,int> promotionPieceCharIntConversion = {
+    {'q',0},
+    {'r',1},
+    {'n',2},
+    {'b',3}
+};
+
+
+int convertNotationToInt(const std::string &notation);
+int convertLocationToRows(const int location);
+int convertLocationToColumns(const int location);
+
+
+std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation);
+
+bool isAdversaryTurn(BoardState &state, bool isAdversaryWhite);
+
+void updatePieceBitBoards(BoardState &state);
 
 #endif
