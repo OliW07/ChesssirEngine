@@ -19,10 +19,17 @@ bool isPlaying = true;
 int main(){
 
     const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    const std::string CUSTOM_TEST_POSITION = "4k3/q2p1n2/7p/8/8/7Q/8/R3K3 w - - 0 1";
 
-    Board playingBoard(STARTING_FEN,true);
+    Board playingBoard(CUSTOM_TEST_POSITION,true);
 
     init(playingBoard);
+
+    
+
+    visualiseGraphicBoard(playingBoard.state);
+
+    return -1;
 
     gameLoop(playingBoard); 
 
@@ -37,6 +44,7 @@ void init(Board &boardInstance){
 }
 
 void gameLoop(Board &boardInstance){
+
 
     std::cout << "Chess Game Starting... \n";
 

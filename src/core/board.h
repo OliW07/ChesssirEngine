@@ -22,11 +22,19 @@ class Board{
 
         
         bool isAdversaryTurn();
-        bool isWhite(int pos);
-        bool friendlyPieces(int pos);
-        uint64_t getPseduoLegalMoves(int pos);
+        bool isPieceWhite(int pos);
+        uint64_t friendlyPieces(int pos);
+        uint64_t getPseudoLegalMoves(int pos);
         void makeMove(int from, int to, int promotionPiece);
+        void updatePieceBitBoards();
+
+        int getPieceEnum(int pos);
                         
 };
+
+enum Pieces {Pawn,Rook,Bishop,Knight,Queen,King};
+
+
+
 
 #endif

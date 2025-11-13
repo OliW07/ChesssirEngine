@@ -46,8 +46,6 @@ int convertLocationToColumns(const int location);
 
 std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation);
 
-bool isAdversaryTurn(BoardState &state, bool isAdversaryWhite);
 
-void updatePieceBitBoards(BoardState &state);
 
 #endif
