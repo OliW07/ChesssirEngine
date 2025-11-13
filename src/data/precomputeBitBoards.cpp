@@ -1,7 +1,8 @@
 
 #include <iostream>
 #include <cmath>
-
+#include <unordered_map>
+#include <map>
 #include "precompute.h"
 #include "utils/Types.h"
 
@@ -13,6 +14,7 @@ uint64_t BishopMoves[64] = {};
 uint64_t whitePawnMoves[64] = {};
 uint64_t blackPawnMoves[64] = {};
 
+std::unordered_map<std::string, uint64_t[64]> Rays;
 
 
 void computeKnightMoves(const int pos);
@@ -21,9 +23,9 @@ void computeQueenMoves(const int pos);
 void computeRookMoves(const int pos);
 void computeBishopMoves(const int pos);
 void computePawnMoves(const int pos, bool isWhite);
+void computeSlidingRays(const int pos);
 
 
-uint64_t returnSlidingBitBoard(const int pos, bool diagonalSliding);
 
 
 void precomputeBitBoardMoves(){
@@ -38,6 +40,7 @@ void precomputeBitBoardMoves(){
         computeBishopMoves(i);
         computePawnMoves(i,true);
         computePawnMoves(i,false);
+        computeSlidingRays(i);
     }
 
     
@@ -92,18 +95,18 @@ void computeKingMoves(const int pos){
 
 void computeQueenMoves(const int pos){
 
-    QueenMoves[pos] = (returnSlidingBitBoard(pos,true) | returnSlidingBitBoard(pos,false));
+    QueenMoves[pos] = (Rays["North"][pos] | Rays["East"][pos] | Rays["South"][pos] | Rays["West"][pos] | Rays["NorthEast"][pos] | Rays["SouthEast"][pos] | Rays["SouthWest"][pos] | Rays["NorthWest"][pos]);
     
 }
 
 void computeRookMoves(const int pos){
 
-    RookMoves[pos] = returnSlidingBitBoard(pos,false);
+    RookMoves[pos] = (Rays["North"][pos] | Rays["East"][pos] | Rays["South"][pos] | Rays["West"][pos]);
 }
 
 void computeBishopMoves(const int pos){
 
-    BishopMoves[pos] = returnSlidingBitBoard(pos,true);
+    BishopMoves[pos] = (Rays["NorthEast"][pos] | Rays["SouthEast"][pos] | Rays["SouthWest"][pos] | Rays["NorthWest"][pos]);
     
 }
 
@@ -141,21 +144,29 @@ void computePawnMoves(const int pos, bool isWhite){
     
 }
 
+void computeSlidingRays(const int pos){
+    
+    const std::map<std::string,int> offsets = {
+        {"North",8},
+        {"NorthEast",9},
+        {"East",1},
+        {"SouthEast",-7},
+        {"South",-8},
+        {"SouthWest",-9},
+        {"West",-1},
+        {"NorthWest",7}
 
-uint64_t returnSlidingBitBoard(const int pos, bool diagonalSliding){
+    };
 
-    uint64_t slidingBitBoard = 0;
-    const int straightOffsets[4] = {1,8,-1,-8};
-    const int diagonalOffsets[4] = {7,9,-7,-9};
+    for (auto const &[direction, offset] : offsets){
 
-    const int *offsets = diagonalSliding ? diagonalOffsets : straightOffsets;
+        int newLocation = pos + offset;
 
-   
-    for(int i = 0; i < 4; i++){
+        bool diagonalSliding = (direction == "NorthEast" || direction == "SouthEast" || direction == "SouthWest" || direction == "NorthWest");
 
-        int move = offsets[i];
+        
 
-        int newLocation = pos + move;
+        uint64_t *RayBitBoard_p = &Rays[direction][pos];
 
         //Check if the new location is on the board, before running helper functions
 
@@ -177,21 +188,22 @@ uint64_t returnSlidingBitBoard(const int pos, bool diagonalSliding){
 
         while(true){
                 
-            slidingBitBoard |= (1ULL << newLocation);
+            *RayBitBoard_p |= (1ULL << newLocation);
 
             if(diagonalSliding && ((newColumn == 0) || (newRow == 0) || (newColumn == 7) || (newRow == 7))) break;
             else if(!diagonalSliding){
-                if((abs(move) == 1) && ((newColumn == 0) || (newColumn == 7))) break;
-                if((abs(move) == 8) && ((newRow == 0) || newRow == 7)) break;
+                if((abs(offset) == 1) && ((newColumn == 0) || (newColumn == 7))) break;
+                if((abs(offset) == 8) && ((newRow == 0) || newRow == 7)) break;
             }
 
-            newLocation += move;
+            newLocation += offset;
             newColumn = convertLocationToColumns(newLocation);
             newRow = convertLocationToRows(newLocation);
 
         }
-        
+
     }
 
-    return slidingBitBoard;
 }
+
+
