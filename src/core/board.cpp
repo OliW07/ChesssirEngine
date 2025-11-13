@@ -172,7 +172,7 @@ void Board::makeMove(int from, int to, int promotionPiece){
 
 void Board::parseFenString(std::string fen){
 
-    uint64_t boardIndex = 63;
+    uint64_t boardIndex = 56;
 
     for(int i = 0; i < fen.length(); i++){
 
@@ -181,7 +181,7 @@ void Board::parseFenString(std::string fen){
 
 
         if(std::isdigit(uCharacter)){
-            boardIndex -= (uCharacter - '0');
+            boardIndex += (uCharacter - '0');
             continue;
 
         }else if(std::isalpha(uCharacter)){
@@ -217,7 +217,10 @@ void Board::parseFenString(std::string fen){
             *pieceBitBoard |= (1ULL << boardIndex);
 
         }else if(uCharacter == '/'){
-            //Don't increment the counter as / is not representitive of a piece.
+
+            //Move position down a line and to the start (left) side
+            boardIndex -= 16;
+            
             continue;
         }else if(uCharacter == ' '){
             //End of piece data in fen
@@ -225,7 +228,7 @@ void Board::parseFenString(std::string fen){
             break;
         }
 
-        boardIndex -= 1;
+        boardIndex += 1;
             
     }
 
