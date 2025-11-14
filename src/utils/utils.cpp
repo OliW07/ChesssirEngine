@@ -60,6 +60,19 @@ std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation){
         
 }
 
+std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard){
+    std::vector<int> locations = {};
+    while(bitBoard){
+        
+        int location = __builtin_ctzll(bitBoard);
+        locations.push_back(location);
+
+        //Toggle the bit off
+        bitBoard ^= (1ULL << location);
+    }
+
+    return locations;
+}
 
 int convertLocationToColumns(const int location){
     if(location < 0 || location > 63){

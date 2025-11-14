@@ -45,7 +45,7 @@ int convertLocationToColumns(const int location);
 
 
 std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation);
-
+std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard);
 
 
 #endif
