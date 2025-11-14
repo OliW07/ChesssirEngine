@@ -88,6 +88,44 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
 
 }
 
+uint64_t Board::getFirstBlocker(int pos, std::string direction){
+    
+    uint64_t blockers = Rays[direction][pos] & (state.whitePieceBitBoard | state.blackPieceBitBoard);
+
+    if(!blockers) return 0ULL;
+
+    if(direction == "North" || direction == "East" || direction == "NorthEast" || direction == "NorthWest") return __builtin_ctzll(blockers);
+         
+    return 63 - __builtin_clzll(blockers);
+    
+}
+
+uint64_t Board::getLegalMoves(const int pos){
+
+    if(pos < 0 || pos > 63) throw std::runtime_error("The position provided, is not in range 0-63");
+
+
+    uint64_t legalMoves = getPseudoLegalMoves(pos);
+
+    enum Pieces pieceType = (Pieces)getPieceEnum(pos);
+
+    //The king can't move to an attacked square
+    if(pieceType == King) legalMoves &= ~getAllAttacks(!isPieceWhite(pos));
+    
+    //If the piece is pinned, limit its movement to the ray between itself and the king
+    if(getPinnedPieces(isPieceWhite(pos)) & (1ULL << pos)){
+
+        int kingLocation = getKingLocation(isPieceWhite(pos));
+
+        std::string direction = convertPositionsToDirections(kingLocation,pos);
+
+        legalMoves &= Rays[direction][kingLocation];
+    }
+
+    return legalMoves;
+
+}
+
 uint64_t Board::getAttacks(const int pos){
 
     uint64_t *PieceAttacks_p = nullptr;
@@ -150,26 +188,17 @@ uint64_t Board::getAttacks(const int pos){
         if(!blockers) break;
 
         uint64_t blockers1Direction = blockers & Rays[directions[i]][pos];
-        int firstBlockerPos;
 
         if(!blockers1Direction) continue;
 
-        if(i==0 || i ==1 || i==4 || i==7){
-
-            //North, East, NorthEast, NorthWest
-            firstBlockerPos = __builtin_ctzll(blockers1Direction);
-        }else{
-
-            //South, West, SouthEast, SouthWest
-            firstBlockerPos = 63 - __builtin_clzll(blockers1Direction);
-        }
+        int firstBlockerPos = getFirstBlocker(pos,directions[i]);
         
         blockingRays |= Rays[directions[i]][firstBlockerPos];    
     
     }
 
 
-    uint64_t attacks = (*PieceAttacks_p) & (~friendlyPieces(pos)) & (~blockingRays);
+    uint64_t attacks = (*PieceAttacks_p) & (~getFriendlyPieces(pos)) & (~blockingRays);
 
     if(pieceType == Pawn && state.enPassantSquare != -1){
         
@@ -193,7 +222,7 @@ uint64_t Board::getAttacks(const int pos){
 
 }
 
-uint64_t Board::allAttacks(bool isWhite){
+uint64_t Board::getAllAttacks(bool isWhite){
 
     uint64_t attacks = 0ULL;
     std::vector<int> pieceLocations = isWhite ? getLocationsFromBitBoard(state.whitePieceBitBoard) : getLocationsFromBitBoard(state.blackPieceBitBoard);
@@ -205,10 +234,70 @@ uint64_t Board::allAttacks(bool isWhite){
     return attacks;
 }
 
-uint64_t Board::friendlyPieces(int pos){
+uint64_t Board::getFriendlyPieces(int pos){
     return isPieceWhite(pos) ? state.whitePieceBitBoard : state.blackPieceBitBoard;
 }
 
+uint64_t Board::getKingLocation(bool isWhite){
+    return isWhite ? __builtin_ctzll(state.whiteKingBitBoard) : __builtin_ctzll(state.blackKingBitBoard);
+}
+
+uint64_t Board::getEnemyPieces(int pos){
+    return isPieceWhite(pos) ? state.blackPieceBitBoard : state.whitePieceBitBoard;
+}
+
+uint64_t Board::getRay(int pos1, int pos2){
+    
+    std::string direction = convertPositionsToDirections(pos1,pos2);
+
+    uint64_t ray = Rays[direction][pos1];
+   
+    ray &= ~Rays[direction][pos2];
+
+    return ray;
+}
+
+uint64_t Board::getPinnedPieces(bool isWhite){
+
+    uint64_t pinnedPieces = 0ULL;
+    uint64_t kingLocation = getKingLocation(isWhite);
+    
+    
+    for (auto const &[direction,offset] : Compass){
+
+        uint64_t ray = Rays[direction][kingLocation];
+
+        uint64_t pinnedPiece = ray & getFriendlyPieces(kingLocation);
+
+        int firstBlocker = getFirstBlocker(kingLocation, direction);
+        if(!firstBlocker) continue;
+
+        //Pinned piece must be a friendly piece
+        if(isPieceWhite(firstBlocker) != isPieceWhite(kingLocation))  continue;
+
+        int secondBlocker = getFirstBlocker(firstBlocker,direction);
+        if(!secondBlocker) continue;
+
+        //If the second piece is also a friendly, nothing is pinned
+        if(isPieceWhite(secondBlocker) == isPieceWhite(kingLocation)) continue;
+
+        enum Pieces enemyPiece = (Pieces)getPieceEnum(secondBlocker);
+
+        if((enemyPiece == Bishop || enemyPiece == Queen) && (direction == "NorthEast" || direction == "NorthWest" || direction == "SouthEast" || direction == "SouthWest")){
+
+            pinnedPieces |= (1ULL << firstBlocker);
+
+        }else if((enemyPiece == Rook || enemyPiece == Queen) && (direction == "North" || direction == "South" || direction == "East" || direction == "West")){
+
+            pinnedPieces |= (1ULL << firstBlocker);
+
+        }
+         
+    }
+
+    return pinnedPieces;
+
+}
 
 
 int Board::getPieceEnum(int pos){
@@ -262,8 +351,9 @@ bool Board::isSquareEmpty(int pos){
 }
 
 bool Board::isSquareAttacked(int pos, bool attackingColourIsWhite){
-    return (1ULL << pos & allAttacks(attackingColourIsWhite));
+    return (1ULL << pos & getAllAttacks(attackingColourIsWhite));
 }
+
 
 
 
