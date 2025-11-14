@@ -29,6 +29,17 @@ void computePawnMoves(const int pos, bool isWhite);
 void computeSlidingRays(const int pos);
 
 
+const std::map<std::string,int> Compass = {
+        {"North",8},
+        {"NorthEast",9},
+        {"East",1},
+        {"SouthEast",-7},
+        {"South",-8},
+        {"SouthWest",-9},
+        {"West",-1},
+        {"NorthWest",7}
+
+    };
 
 
 void precomputeBitBoardMoves(){
@@ -160,19 +171,8 @@ void computePawnMoves(const int pos, bool isWhite){
 
 void computeSlidingRays(const int pos){
     
-    const std::map<std::string,int> offsets = {
-        {"North",8},
-        {"NorthEast",9},
-        {"East",1},
-        {"SouthEast",-7},
-        {"South",-8},
-        {"SouthWest",-9},
-        {"West",-1},
-        {"NorthWest",7}
 
-    };
-
-    for (auto const &[direction, offset] : offsets){
+    for (auto const &[direction, offset] : Compass){
 
         int newLocation = pos + offset;
 
