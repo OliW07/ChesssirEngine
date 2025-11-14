@@ -74,6 +74,43 @@ std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard){
     return locations;
 }
 
+std::string convertPositionsToDirections(int pos1, int pos2){
+
+    int pos1Rows = convertLocationToRows(pos1),
+        pos2Rows = convertLocationToRows(pos2),
+        pos1Columns = convertLocationToColumns(pos1),
+        pos2Columns = convertLocationToColumns(pos2),
+
+        rowsDifference = pos1Rows - pos2Rows,
+        columnsDifference = pos1Columns - pos2Columns;
+
+    bool isDiagonal = abs(rowsDifference) == abs(columnsDifference);
+
+    //Direction relative to pos1
+    std::string direction = "";
+    
+    if(rowsDifference == 0 && columnsDifference > 0){
+        direction = "West";
+    }else if(rowsDifference == 0 && columnsDifference < 0){
+        direction = "East";
+    }else if(columnsDifference == 0 && rowsDifference > 0){
+        direction = "South";
+    }else if(columnsDifference == 0 && rowsDifference < 0){
+        direction = "North";
+    }else if(rowsDifference > 0 && columnsDifference > 0 && isDiagonal){
+        direction = "SouthWest";
+    }else if(rowsDifference < 0 && columnsDifference < 0 && isDiagonal){
+        direction = "NorthEast";
+    }else if(rowsDifference > 0 && columnsDifference < 0 && isDiagonal){
+        direction = "SouthEast";
+    }else if(rowsDifference < 0 && columnsDifference > 0 && isDiagonal){
+        direction = "NorthWest";
+    }
+
+    return direction;
+}
+
+
 int convertLocationToColumns(const int location){
     if(location < 0 || location > 63){
         throw std::runtime_error("Location "+std::to_string(location)+" is out of range");
@@ -81,5 +118,7 @@ int convertLocationToColumns(const int location){
     return location%8;
 }
 
-
+bool onlyOnePiece(uint64_t state){
+    return (__builtin_ctzll(state) + __builtin_clzll(state) == 63);
+}
 

@@ -43,6 +43,9 @@ int convertNotationToInt(const std::string &notation);
 int convertLocationToRows(const int location);
 int convertLocationToColumns(const int location);
 
+bool onlyOnePiece(uint64_t state);
+
+std::string convertPositionsToDirections(int pos1, int pos2);
 
 std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation);
 std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard);
