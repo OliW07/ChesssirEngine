@@ -13,13 +13,14 @@ void init(Board &boardInstance);
 void gameLoop(Board &boardInstance);
 
 
+
 bool isPlaying = true;
 
 
 int main(){
 
     const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const std::string CUSTOM_TEST_POSITION = "4k3/q2p1n2/7p/8/8/7Q/8/R3K3 w - - 0 1";
+    const std::string CUSTOM_TEST_POSITION = "3qk2r/6r1/8/8/8/8/6P1/R3K2R w KQk - 1 1";
 
     Board playingBoard(CUSTOM_TEST_POSITION,true);
 
@@ -28,6 +29,7 @@ int main(){
     
 
     visualiseGraphicBoard(playingBoard.state);
+    visualiseBitBoard(playingBoard.getPseudoLegalMoves(60));
 
     return -1;
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <algorithm>
 
 #include "board.h"
 #include "utils/Types.h"
@@ -18,6 +19,8 @@ extern uint64_t RookMoves[64];
 extern uint64_t BishopMoves[64];
 extern uint64_t whitePawnMoves[64];
 extern uint64_t blackPawnMoves[64];
+extern uint64_t whitPawnAttacks[64];
+extern uint64_t blackPawnAttacks[64];
 extern std::unordered_map<std::string, uint64_t[64]> Rays;
 
 
@@ -29,12 +32,71 @@ Board::Board(const std::string fen, bool isAdversaryWhite){
 
 uint64_t Board::getPseudoLegalMoves(const int pos){
 
-    uint64_t *PieceMoves_p = nullptr;
+    if(isSquareEmpty(pos)) return 0ULL;
+
+    uint64_t allPieces = state.whitePieceBitBoard | state.blackPieceBitBoard;
+    uint64_t pseudoLegalMoves = getAttacks(pos);
+    
+    enum Pieces pieceType = (Pieces)getPieceEnum(pos);
+
+    //Add (non attack) pawn moves 
+    if(pieceType == Pawn){
+
+        uint64_t *pawnMoves = isPieceWhite(pos) ? &whitePawnMoves[pos] : &blackPawnMoves[pos];
+    
+        //Pawns can't move onto their own pieces or friendly pieces
+        pseudoLegalMoves |= (*pawnMoves & ~allPieces);
+
+        uint64_t oneSpaceTargetSquare = isPieceWhite(pos) ? (1ULL << std::min(pos+8,64)) : (1ULL << std::max(pos-8,-1));
+
+        //If a piece in directly infront of a pawn, it can't do two moves
+        if((oneSpaceTargetSquare & allPieces) && oneSpaceTargetSquare != 64 && oneSpaceTargetSquare != -1){
+            if(isPieceWhite(pos)) pseudoLegalMoves &= ~(1ULL << pos+16);
+            else  pseudoLegalMoves &= ~(1ULL << pos-16);
+        }
+    }
+
+    //Add castling
+
+    if(pieceType == King && state.castlingRights != "-"){
+
+        for(char c : state.castlingRights){
+            if(isupper(c) && isPieceWhite(pos)){
+                if(c == 'K' && !isSquareAttacked(5,false) && !isSquareAttacked(6,false) && isSquareEmpty(5) && isSquareEmpty(6)){
+                    //White kingside castling square
+                    pseudoLegalMoves |= (1ULL << 6);
+                }else if(c == 'Q' && !isSquareAttacked(3,false) && !isSquareAttacked(2,false) && !isSquareAttacked(1,false) && isSquareEmpty(3) && isSquareEmpty(2) && isSquareEmpty(1)){
+                    //White queenside castling square
+                    pseudoLegalMoves |= (1ULL << 2);
+                }
+            }else if(islower(c) && !isPieceWhite(pos)){
+                if(c == 'k' && !isSquareAttacked(61,true) && !isSquareAttacked(62,true) && isSquareEmpty(61) && isSquareEmpty(62)){
+                    //Black kingside castling square
+                    pseudoLegalMoves |= (1ULL << 62);
+                }else if(c == 'q' && !isSquareAttacked(57,true) && !isSquareAttacked(58,true) && !isSquareAttacked(59,true)&& isSquareEmpty(57) && isSquareEmpty(58) && isSquareEmpty(59)){
+                    //Black queenside castling square
+                    pseudoLegalMoves |= (1ULL << 58);
+                }
+                    
+            }
+        } 
+        
+    }
+
+
+    return pseudoLegalMoves;
+
+}
+
+uint64_t Board::getAttacks(const int pos){
+
+    uint64_t *PieceAttacks_p = nullptr;
     uint64_t target = 1ULL << pos;
 
-    //If the square is empty
+    uint64_t allPieces = state.whitePieceBitBoard | state.blackPieceBitBoard;
+
     
-    if(!(target & state.whitePieceBitBoard & state.blackPieceBitBoard)) return 0ULL;
+    if(isSquareEmpty(pos)) return 0ULL;
 
     enum Pieces pieceType = (Pieces)getPieceEnum(pos);
 
@@ -42,28 +104,28 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
 
     switch(pieceType){
         case Pawn:
-
-            PieceMoves_p = isPieceWhite(pos) ? &whitePawnMoves[pos] : &blackPawnMoves[pos];
-            
+            PieceAttacks_p = isPieceWhite(pos) ? &whitePawnAttacks[pos] : &blackPawnAttacks[pos];
+            //The pawn can only attack (diagonally) is there is an enemy piece there
+            *PieceAttacks_p &= (isPieceWhite(pos) ? state.blackPieceBitBoard : state.whitePieceBitBoard);
             break;
         case Knight:
-            PieceMoves_p = &KnightMoves[pos];
+            PieceAttacks_p = &KnightMoves[pos];
             break;
         case Bishop:
-            PieceMoves_p = &BishopMoves[pos];
+            PieceAttacks_p = &BishopMoves[pos];
             start = 4;
             end = 8;
             break;
         case Rook:
-            PieceMoves_p = &RookMoves[pos];
+            PieceAttacks_p = &RookMoves[pos];
             start = 0;
             end = 4;
             break;
         case King:
-            PieceMoves_p = &KingMoves[pos];
+            PieceAttacks_p = &KingMoves[pos];
             break;
         case Queen:
-            PieceMoves_p = &QueenMoves[pos];
+            PieceAttacks_p = &QueenMoves[pos];
             start = 0;
             end = 8;
             break;
@@ -76,7 +138,7 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
     //Find which piece it at the position
 
     uint64_t blockingRays = 0ULL;
-    uint64_t blockers = *PieceMoves_p & (state.whitePieceBitBoard | state.blackPieceBitBoard);
+    uint64_t blockers = *PieceAttacks_p & allPieces;
 
     const std::string directions[8] = {"North","East","South","West","NorthEast","SouthEast","SouthWest","NorthWest"};
 
@@ -89,6 +151,8 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
 
         uint64_t blockers1Direction = blockers & Rays[directions[i]][pos];
         int firstBlockerPos;
+
+        if(!blockers1Direction) continue;
 
         if(i==0 || i ==1 || i==4 || i==7){
 
@@ -105,19 +169,46 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
     }
 
 
-    //TODO pawn attacks, en passant, castling
+    uint64_t attacks = (*PieceAttacks_p) & (~friendlyPieces(pos)) & (~blockingRays);
 
-    uint64_t pseduoLegalMoves = (*PieceMoves_p) & (~friendlyPieces(pos)) & (~blockingRays);
+    if(pieceType == Pawn && state.enPassantSquare != -1){
+        
+        int columnsDifference = abs(convertLocationToColumns(state.enPassantSquare) - convertLocationToColumns(pos));
+        int rowsDifference = abs(convertLocationToRows(state.enPassantSquare) - convertLocationToRows(pos));
 
-    visualiseBitBoard(pseduoLegalMoves);
+        bool pieceWrapsTheBoard = !((columnsDifference < 2) && (rowsDifference < 2));
 
-    return pseduoLegalMoves;
+        //The pawn must be diagonally next to the enpassant square to move there
+        if((isPieceWhite(pos) && ((state.enPassantSquare - 9 == pos) || (state.enPassantSquare - 7 == pos))) && !pieceWrapsTheBoard){
 
+            attacks |= (1ULL << state.enPassantSquare);
+        }else if(!isPieceWhite(pos) && ((state.enPassantSquare + 9 == pos) || (state.enPassantSquare + 7 == pos))&& !pieceWrapsTheBoard){
+
+            attacks |= (1ULL << state.enPassantSquare);
+        }
+ 
+    }
+
+    return attacks;
+
+}
+
+uint64_t Board::allAttacks(bool isWhite){
+
+    uint64_t attacks = 0ULL;
+    std::vector<int> pieceLocations = isWhite ? getLocationsFromBitBoard(state.whitePieceBitBoard) : getLocationsFromBitBoard(state.blackPieceBitBoard);
+
+    for(int location : pieceLocations){
+        attacks |= getAttacks(location);
+    }
+
+    return attacks;
 }
 
 uint64_t Board::friendlyPieces(int pos){
     return isPieceWhite(pos) ? state.whitePieceBitBoard : state.blackPieceBitBoard;
 }
+
 
 
 int Board::getPieceEnum(int pos){
@@ -148,6 +239,7 @@ int Board::getPieceEnum(int pos){
 }
 
 
+
 bool Board::isAdversaryTurn(){
 
     return state.whiteToMove ? isAdversaryWhite : !isAdversaryWhite;
@@ -157,6 +249,22 @@ bool Board::isAdversaryTurn(){
 bool Board::isPieceWhite(int pos){
     return (1ULL << pos) & state.whitePieceBitBoard;
 }
+
+bool Board::isSquareEmpty(int pos){
+
+    uint64_t target = 1ULL << pos;
+
+    uint64_t allPieces = state.whitePieceBitBoard | state.blackPieceBitBoard;
+
+    
+    return !(target & allPieces);
+
+}
+
+bool Board::isSquareAttacked(int pos, bool attackingColourIsWhite){
+    return (1ULL << pos & allAttacks(attackingColourIsWhite));
+}
+
 
 
 void Board::updatePieceBitBoards(){

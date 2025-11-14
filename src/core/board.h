@@ -23,8 +23,14 @@ class Board{
         
         bool isAdversaryTurn();
         bool isPieceWhite(int pos);
+        bool isSquareEmpty(int pos);
+        bool isSquareAttacked(int pos, bool attackingColourIsWhite);
+   
         uint64_t friendlyPieces(int pos);
         uint64_t getPseudoLegalMoves(int pos);
+        uint64_t allAttacks(bool isWhite);
+        uint64_t getAttacks(const int pos);
+        
         void makeMove(int from, int to, int promotionPiece);
         void updatePieceBitBoards();
 
