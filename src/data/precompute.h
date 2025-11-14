@@ -11,6 +11,8 @@ extern uint64_t RookMoves[64];
 extern uint64_t BishopMoves[64];
 extern uint64_t whitePawnMoves[64];
 extern uint64_t blackPawnMoves[64];
+extern uint64_t whitePawnAttacks[64];
+extern uint64_t blackPawnAttacks[64];
 extern std::unordered_map<std::string, uint64_t[64]> Rays;
 
 void precomputeBitBoardMoves();

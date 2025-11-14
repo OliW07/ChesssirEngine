@@ -5,6 +5,7 @@
 #include <map>
 #include "precompute.h"
 #include "utils/Types.h"
+#include "debug.h"
 
 uint64_t KnightMoves[64] = {};
 uint64_t KingMoves[64] = {};
@@ -13,6 +14,8 @@ uint64_t RookMoves[64] = {};
 uint64_t BishopMoves[64] = {};
 uint64_t whitePawnMoves[64] = {};
 uint64_t blackPawnMoves[64] = {};
+uint64_t whitePawnAttacks[64] = {};
+uint64_t blackPawnAttacks[64] = {};
 
 std::unordered_map<std::string, uint64_t[64]> Rays;
 
@@ -33,6 +36,8 @@ void precomputeBitBoardMoves(){
     std::cout << "Precomputing move data.. \n";
     
     for(int i = 0; i < 64; i++){
+        
+        computeSlidingRays(i);
         computeKnightMoves(i);
         computeKingMoves(i);
         computeQueenMoves(i);
@@ -40,9 +45,10 @@ void precomputeBitBoardMoves(){
         computeBishopMoves(i);
         computePawnMoves(i,true);
         computePawnMoves(i,false);
-        computeSlidingRays(i);
-    }
 
+        
+        
+    }
     
     std::cout << "Successfully precomputed bit board data \n";
 }
@@ -131,9 +137,17 @@ void computePawnMoves(const int pos, bool isWhite){
         //Check the pawn does not wrap around the board
 
         if((columnDifference > 1) || (rowDifference > 1)) continue;
-            
-        if(isWhite) whitePawnMoves[pos] |= (1ULL << newLocation);
-        else blackPawnMoves[pos] |= (1ULL << newLocation);
+        
+        if(i == 1){
+            //Straight movement, pawn move
+            if(isWhite) whitePawnMoves[pos] |= (1ULL << newLocation);
+            else blackPawnMoves[pos] |= (1ULL << newLocation);
+        }else{
+            //Diagonal movement, pawn attack
+            if(isWhite) whitePawnAttacks[pos] |= (1ULL << newLocation);
+            else blackPawnAttacks[pos] |= (1ULL << newLocation);
+        }
+        
         
     }
 
