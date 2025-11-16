@@ -26,6 +26,11 @@ int convertLocationToRows(const int location){
     return location/8;
 }
 
+int countOnes(uint64_t state){
+    return __builtin_popcountll(state);
+}
+
+
 std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation){
 
         if(notation.length() < 4 || notation.length() > 5) return {};
@@ -120,5 +125,16 @@ int convertLocationToColumns(const int location){
 
 bool onlyOnePiece(uint64_t state){
     return (__builtin_ctzll(state) + __builtin_clzll(state) == 63);
+}
+
+bool posInBounds(int pos){
+    return (pos >= 0 && pos <= 63);
+}
+
+bool pieceWrapsTheBoard(int pos1, int pos2){
+    int columnsDifference = abs(convertLocationToColumns(pos1) - convertLocationToColumns(pos1));
+    int rowsDifference = abs(convertLocationToRows(pos1) - convertLocationToRows(pos2));
+
+    return !((columnsDifference < 2) && (rowsDifference < 2));
 }
 

@@ -25,6 +25,7 @@ struct BoardState{
         blackPieceBitBoard = 0ULL;
 
     bool whiteToMove = 0;
+    bool whiteStarts = 1;
     int enPassantSquare = -1;
     int halfMoveClock = 0;
     int fullMoveClock = 0;
@@ -32,18 +33,21 @@ struct BoardState{
 };
 
 const std::unordered_map<char,int> promotionPieceCharIntConversion = {
-    {'q',0},
+    {'q',4},
     {'r',1},
-    {'n',2},
-    {'b',3}
+    {'n',3},
+    {'b',2}
 };
 
 
 int convertNotationToInt(const std::string &notation);
 int convertLocationToRows(const int location);
 int convertLocationToColumns(const int location);
+int countOnes(uint64_t state);
 
 bool onlyOnePiece(uint64_t state);
+bool posInBounds(int pos);
+bool pieceWrapsTheBoard(int pos1, int pos2);
 
 std::string convertPositionsToDirections(int pos1, int pos2);
 
