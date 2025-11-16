@@ -20,18 +20,15 @@ bool isPlaying = true;
 int main(){
 
     const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const std::string CUSTOM_TEST_POSITION = "3qk2r/6r1/8/8/8/8/6P1/R3K2R w KQk - 1 1";
+    const std::string CUSTOM_TEST_POSITION = "4k3/8/6P1/8/7N/8/8/1r1RQ2K w - - 0 1";
 
-    Board playingBoard(CUSTOM_TEST_POSITION,true);
+    Board playingBoard(STARTING_FEN,true);
 
     init(playingBoard);
 
     
 
     visualiseGraphicBoard(playingBoard.state);
-    visualiseBitBoard(playingBoard.getPseudoLegalMoves(60));
-
-    return -1;
 
     gameLoop(playingBoard); 
 
@@ -64,8 +61,6 @@ void gameLoop(Board &boardInstance){
                 
                 std::vector<int> moveData = convertAlgebraicNotationToMoves(adversaryInput);
                
-
-
                 if(moveData.empty()){
 
                     //Bad user input
@@ -77,12 +72,14 @@ void gameLoop(Board &boardInstance){
                 visualiseGraphicBoard(boardInstance.state);
                 //Move the piece on the board
 
+                
+
 
         }else{
-            isPlaying = false;
+             
         }
         
-        boardInstance.state.whiteToMove = !boardInstance.state.whiteToMove;
+        
     }
 
 

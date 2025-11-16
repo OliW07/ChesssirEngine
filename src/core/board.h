@@ -29,18 +29,22 @@ class Board{
         uint64_t getFriendlyPieces(int pos);
         uint64_t getEnemyPieces(int pos);
         uint64_t getKingLocation(bool isWhite);
-        uint64_t getFirstBlocker(int pos, std::string direction);
         uint64_t getPseudoLegalMoves(int pos);
         uint64_t getLegalMoves(const int pos);
         uint64_t getAllAttacks(bool isWhite);
         uint64_t getAttacks(const int pos);
+        uint64_t getPawnAttackers(int pos, bool attackingIsWhite);
+        uint64_t getAttackers(int pos, bool attackingIsWhite);
+        uint64_t pawnControlledSquare(bool controllingColourIsWhite);
         uint64_t getRay(int pos1, int pos2);
         uint64_t getPinnedPieces(bool isWhite);
+        uint64_t* getBitBoardFromPiece(int pieceEnum, bool isWhite);
         
         void makeMove(int from, int to, int promotionPiece);
         void updatePieceBitBoards();
 
         int getPieceEnum(int pos);
+        int getFirstBlocker(int pos, std::string direction);
                         
 };
 

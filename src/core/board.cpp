@@ -88,18 +88,6 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
 
 }
 
-uint64_t Board::getFirstBlocker(int pos, std::string direction){
-    
-    uint64_t blockers = Rays[direction][pos] & (state.whitePieceBitBoard | state.blackPieceBitBoard);
-
-    if(!blockers) return 0ULL;
-
-    if(direction == "North" || direction == "East" || direction == "NorthEast" || direction == "NorthWest") return __builtin_ctzll(blockers);
-         
-    return 63 - __builtin_clzll(blockers);
-    
-}
-
 uint64_t Board::getLegalMoves(const int pos){
 
     if(pos < 0 || pos > 63) throw std::runtime_error("The position provided, is not in range 0-63");
@@ -109,18 +97,46 @@ uint64_t Board::getLegalMoves(const int pos){
 
     enum Pieces pieceType = (Pieces)getPieceEnum(pos);
 
-    //The king can't move to an attacked square
-    if(pieceType == King) legalMoves &= ~getAllAttacks(!isPieceWhite(pos));
-    
-    //If the piece is pinned, limit its movement to the ray between itself and the king
-    if(getPinnedPieces(isPieceWhite(pos)) & (1ULL << pos)){
+    bool isWhite = isPieceWhite(pos);
 
-        int kingLocation = getKingLocation(isPieceWhite(pos));
+    int kingLocation = getKingLocation(isWhite);
+
+    
+    if(pieceType == King){
+        //The king can't move to an attacked square
+        legalMoves &= ~getAllAttacks(!isWhite);
+
+        //Additionally filter out the squares the pawns control (but can't attack becuase there is not piece there)
+        legalMoves &= ~pawnControlledSquare(!isWhite);
+
+    } 
+
+    else if(isSquareAttacked(kingLocation,!isWhite)){
+        
+        uint64_t attackers = getAttackers(kingLocation,!isWhite);
+
+        //If the king is attacked more than once, the king is the only piece that can move;
+        if(countOnes(attackers) > 1) return 0ULL;
+
+        int attackerLocation = __builtin_ctzll(attackers);
+
+        uint64_t blockingCapturingRay = getRay(kingLocation,attackerLocation);
+
+        legalMoves &= blockingCapturingRay;
+
+    }
+    //If the piece is pinned, limit its movement to the ray between itself and the king
+    if(getPinnedPieces(isWhite) & (1ULL << pos)){
+
+        int kingLocation = getKingLocation(isWhite);
 
         std::string direction = convertPositionsToDirections(kingLocation,pos);
 
         legalMoves &= Rays[direction][kingLocation];
     }
+
+
+    
 
     return legalMoves;
 
@@ -128,7 +144,7 @@ uint64_t Board::getLegalMoves(const int pos){
 
 uint64_t Board::getAttacks(const int pos){
 
-    uint64_t *PieceAttacks_p = nullptr;
+    uint64_t PieceAttacks = 0ULL;
     uint64_t target = 1ULL << pos;
 
     uint64_t allPieces = state.whitePieceBitBoard | state.blackPieceBitBoard;
@@ -142,28 +158,28 @@ uint64_t Board::getAttacks(const int pos){
 
     switch(pieceType){
         case Pawn:
-            PieceAttacks_p = isPieceWhite(pos) ? &whitePawnAttacks[pos] : &blackPawnAttacks[pos];
+            PieceAttacks = isPieceWhite(pos) ? whitePawnAttacks[pos] : blackPawnAttacks[pos];
             //The pawn can only attack (diagonally) is there is an enemy piece there
-            *PieceAttacks_p &= (isPieceWhite(pos) ? state.blackPieceBitBoard : state.whitePieceBitBoard);
+            PieceAttacks &= (isPieceWhite(pos) ? state.blackPieceBitBoard : state.whitePieceBitBoard);
             break;
         case Knight:
-            PieceAttacks_p = &KnightMoves[pos];
+            PieceAttacks = KnightMoves[pos];
             break;
         case Bishop:
-            PieceAttacks_p = &BishopMoves[pos];
+            PieceAttacks = BishopMoves[pos];
             start = 4;
             end = 8;
             break;
         case Rook:
-            PieceAttacks_p = &RookMoves[pos];
+            PieceAttacks = RookMoves[pos];
             start = 0;
             end = 4;
             break;
         case King:
-            PieceAttacks_p = &KingMoves[pos];
+            PieceAttacks = KingMoves[pos];
             break;
         case Queen:
-            PieceAttacks_p = &QueenMoves[pos];
+            PieceAttacks = QueenMoves[pos];
             start = 0;
             end = 8;
             break;
@@ -176,7 +192,7 @@ uint64_t Board::getAttacks(const int pos){
     //Find which piece it at the position
 
     uint64_t blockingRays = 0ULL;
-    uint64_t blockers = *PieceAttacks_p & allPieces;
+    uint64_t blockers = PieceAttacks & allPieces;
 
     const std::string directions[8] = {"North","East","South","West","NorthEast","SouthEast","SouthWest","NorthWest"};
 
@@ -198,20 +214,17 @@ uint64_t Board::getAttacks(const int pos){
     }
 
 
-    uint64_t attacks = (*PieceAttacks_p) & (~getFriendlyPieces(pos)) & (~blockingRays);
+    uint64_t attacks = (PieceAttacks) & (~getFriendlyPieces(pos)) & (~blockingRays);
 
     if(pieceType == Pawn && state.enPassantSquare != -1){
         
-        int columnsDifference = abs(convertLocationToColumns(state.enPassantSquare) - convertLocationToColumns(pos));
-        int rowsDifference = abs(convertLocationToRows(state.enPassantSquare) - convertLocationToRows(pos));
-
-        bool pieceWrapsTheBoard = !((columnsDifference < 2) && (rowsDifference < 2));
+        bool pieceWraps= pieceWrapsTheBoard(state.enPassantSquare,pos);
 
         //The pawn must be diagonally next to the enpassant square to move there
-        if((isPieceWhite(pos) && ((state.enPassantSquare - 9 == pos) || (state.enPassantSquare - 7 == pos))) && !pieceWrapsTheBoard){
+        if((isPieceWhite(pos) && ((state.enPassantSquare - 9 == pos) || (state.enPassantSquare - 7 == pos))) && !pieceWraps){
 
             attacks |= (1ULL << state.enPassantSquare);
-        }else if(!isPieceWhite(pos) && ((state.enPassantSquare + 9 == pos) || (state.enPassantSquare + 7 == pos))&& !pieceWrapsTheBoard){
+        }else if(!isPieceWhite(pos) && ((state.enPassantSquare + 9 == pos) || (state.enPassantSquare + 7 == pos))&& !pieceWraps){
 
             attacks |= (1ULL << state.enPassantSquare);
         }
@@ -232,6 +245,76 @@ uint64_t Board::getAllAttacks(bool isWhite){
     }
 
     return attacks;
+}
+
+uint64_t Board::getAttackers(int pos, bool attackingIsWhite){
+
+    uint64_t attackers = 0ULL;
+
+    attackers |= getPawnAttackers(pos, attackingIsWhite);
+
+    attackers |= (attackingIsWhite ? (KnightMoves[pos] & state.whiteKnightBitBoard) : (KnightMoves[pos] & state.blackKnightBitBoard));
+
+    for (auto &[direction,offset] : Compass){
+
+        int attackingPiecePos = getFirstBlocker(pos, direction);
+        Pieces pieceType = (Pieces)getPieceEnum(attackingPiecePos);
+
+        if(isPieceWhite(attackingPiecePos) == attackingIsWhite) continue;
+
+        bool straightSliding = (direction == "North" || direction == "East" || direction == "West" || direction == "South");
+
+        if((straightSliding && (pieceType == Rook) || pieceType == Queen) || 
+          (!straightSliding && (pieceType == Bishop || pieceType == Queen))){
+
+            attackers |= (1ULL << attackingPiecePos);
+        }
+    }
+
+    return attackers;
+
+}
+
+uint64_t Board::getPawnAttackers(int pos, bool attackingIsWhite){
+
+    if(!posInBounds(pos)) return 0ULL;
+
+    uint64_t attackers = 0ULL;
+    uint64_t *pieceBitBoard = attackingIsWhite ? &state.whitePawnBitBoard : &state.blackPawnBitBoard;
+
+    int offsets[2] = {7,9};
+
+    for(int direction : offsets){
+
+        int pawnPos = attackingIsWhite ? pos-direction : pos+direction;
+
+        bool pieceWraps = pieceWrapsTheBoard(pos, pawnPos);
+
+        if((*pieceBitBoard & (1ULL << pawnPos)) && !pieceWraps){
+
+            attackers |= (1ULL << pawnPos);
+
+        }
+    }
+
+    return attackers;
+
+}
+
+uint64_t Board::pawnControlledSquare(bool controllingColourIsWhite){
+    //TODO check pawnBitBoard does not reference state, only value
+    uint64_t pawnBitBoard = controllingColourIsWhite ? state.whitePawnBitBoard : state.blackPawnBitBoard;
+    uint64_t *pawnAttacks = controllingColourIsWhite ? whitePawnAttacks : blackPawnAttacks;
+    uint64_t controlledSquares = 0ULL;
+    
+    while(pawnBitBoard){
+        int pawnPos = __builtin_ctzll(pawnBitBoard);
+        controlledSquares |= pawnAttacks[pawnPos];
+        pawnBitBoard ^= (1ULL << pawnPos);
+    }
+
+    return controlledSquares;
+
 }
 
 uint64_t Board::getFriendlyPieces(int pos){
@@ -299,6 +382,35 @@ uint64_t Board::getPinnedPieces(bool isWhite){
 
 }
 
+uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite){
+    uint64_t *pieceBitBoard = nullptr;
+    switch(pieceEnum){
+        case 0:
+            pieceBitBoard = isWhite ? &state.whitePawnBitBoard : &state.blackPawnBitBoard;
+            break;
+        case 1:
+            pieceBitBoard = isWhite ? &state.whiteRookBitBoard : &state.blackRookBitBoard;
+            break;
+        case 2:
+            pieceBitBoard = isWhite ? &state.whiteBishopBitBoard : &state.blackBishopBitBoard;
+            break;
+        case 3:
+            pieceBitBoard = isWhite ? &state.whiteKnightBitBoard : &state.blackKnightBitBoard;
+            break;
+        case 4:
+            pieceBitBoard = isWhite ? &state.whiteQueenBitBoard : &state.blackQueenBitBoard;
+            break;
+        case 5:
+            pieceBitBoard = isWhite ? &state.whiteKingBitBoard : &state.blackKingBitBoard;
+            break;
+        default:
+            throw std::runtime_error("Invalid piece enum");
+            break;
+    }
+    return pieceBitBoard;
+}
+
+
 
 int Board::getPieceEnum(int pos){
 
@@ -325,6 +437,18 @@ int Board::getPieceEnum(int pos){
         return -1;
     }
 
+}
+
+int Board::getFirstBlocker(int pos, std::string direction){
+    
+    uint64_t blockers = Rays[direction][pos] & (state.whitePieceBitBoard | state.blackPieceBitBoard);
+
+    if(!blockers) return 0ULL;
+
+    if(direction == "North" || direction == "East" || direction == "NorthEast" || direction == "NorthWest") return __builtin_ctzll(blockers);
+         
+    return 63 - __builtin_clzll(blockers);
+    
 }
 
 
@@ -365,7 +489,81 @@ void Board::updatePieceBitBoards(){
 }
 
 void Board::makeMove(int from, int to, int promotionPiece){
+    if(!(getLegalMoves(from) & (1ULL << to))){
+        throw std::runtime_error("Illegal move requested");
+    } 
 
+    Pieces pieceType = (Pieces)getPieceEnum(from);
+    bool isWhite = isPieceWhite(from);
+
+    uint64_t *pieceBitBoard = getBitBoardFromPiece((int)pieceType,isWhite);
+
+
+    if((1ULL << to) & (state.whitePieceBitBoard | state.blackPieceBitBoard)){
+        //Capturing a piece
+        int capturedBitBoard = *getBitBoardFromPiece(getPieceEnum(to),!isWhite);
+
+        //Toggle off the captured piece
+        capturedBitBoard ^= (1ULL << to);
+
+        state.halfMoveClock = -1;
+    }
+
+    *pieceBitBoard |= (1ULL << to);
+    *pieceBitBoard ^= (1ULL << from);
+
+    if((pieceType == Pawn)){
+
+        if(abs(convertLocationToRows(from) - convertLocationToRows(to)) == 2){
+            //Set the enpassant square
+            state.enPassantSquare = isWhite ? from+8 : from-8;
+            
+        }else{
+            state.enPassantSquare = -1;
+        }
+
+        if(isWhite && convertLocationToRows(to) == 7){
+            //Pawn promotes
+            uint64_t *newPieceBitBoard = getBitBoardFromPiece(promotionPiece,isWhite);
+            *newPieceBitBoard |= (1ULL << to);
+            *pieceBitBoard ^= (1ULL << to);
+        }
+
+        state.halfMoveClock = -1;
+        
+        
+    }else{
+        state.enPassantSquare = -1;
+    }
+
+    if(pieceType == King && state.castlingRights != "-"){
+        if(isWhite){
+            state.castlingRights.erase(std::remove_if(state.castlingRights.begin(), state.castlingRights.end(), [](char c) {
+                return !std::isupper(c); 
+            }), state.castlingRights.end());
+        }else{
+            state.castlingRights.erase(std::remove_if(state.castlingRights.begin(), state.castlingRights.end(), [](char c) {
+                return !std::islower(c); 
+            }), state.castlingRights.end());
+        }
+    }if(pieceType == Rook && state.castlingRights != "-"){
+        //Remove coresponding castling letter
+        if(isWhite && from == 0) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'K'), state.castlingRights.end());
+        if(isWhite && from == 7) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'Q'), state.castlingRights.end());
+        if(!isWhite && from == 63) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'k'), state.castlingRights.end());
+        if(isWhite && from == 56) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'q'), state.castlingRights.end());
+    }
+
+    updatePieceBitBoards();
+
+    if(state.castlingRights == "") state.castlingRights = "-";
+
+
+    if(state.whiteToMove != state.whiteStarts) state.fullMoveClock++;
+    state.halfMoveClock++;
+
+    state.whiteToMove = !state.whiteToMove;
+    
 }
 
 void Board::parseFenString(std::string fen){
@@ -439,6 +637,7 @@ void Board::parseFenString(std::string fen){
 
     tokens >> token;
     state.whiteToMove = (token == "w");
+    state.whiteStarts = (token == "w");
 
     tokens >> state.castlingRights;
     
