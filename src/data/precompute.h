@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <unordered_map>
 
 extern uint64_t KnightMoves[64];
 extern uint64_t KingMoves[64];
