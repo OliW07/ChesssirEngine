@@ -1,5 +1,5 @@
 #ifndef BOARD_H
-#define BOARD_h
+#define BOARD_H
 
 #include <vector>
 
@@ -30,7 +30,9 @@ class Board{
         uint64_t getEnemyPieces(int pos);
         uint64_t getKingLocation(bool isWhite);
         uint64_t getPseudoLegalMoves(int pos);
+        uint64_t applyLegalMoveValidation(const int pos, uint64_t moves);
         uint64_t getLegalMoves(const int pos);
+        uint64_t getPromotionMoves(const int pos);
         uint64_t getAllAttacks(bool isWhite);
         uint64_t getAttacks(const int pos);
         uint64_t getPawnAttackers(int pos, bool attackingIsWhite);
@@ -40,11 +42,11 @@ class Board{
         uint64_t getPinnedPieces(bool isWhite);
         uint64_t* getBitBoardFromPiece(int pieceEnum, bool isWhite);
         
-        void makeMove(int from, int to, int promotionPiece);
+        void makeMove(int from, int to, int promotionPieceType);
         void updatePieceBitBoards();
 
         int getPieceEnum(int pos);
-        int getFirstBlocker(int pos, std::string direction);
+        int getFirstBlocker(int pos,RaysDirection direction);
                         
 };
 

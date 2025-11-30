@@ -1,9 +1,7 @@
-#include <bitset>
 #include <string>
 #include <stdexcept>
 #include <sstream>
 #include <cstdint>
-#include <vector>
 #include <iostream>
 #include <unordered_map>
 #include <algorithm>
@@ -21,8 +19,7 @@ extern uint64_t whitePawnMoves[64];
 extern uint64_t blackPawnMoves[64];
 extern uint64_t whitPawnAttacks[64];
 extern uint64_t blackPawnAttacks[64];
-extern std::unordered_map<std::string, uint64_t[64]> Rays;
-
+extern uint64_t Rays[8][64];
 
 Board::Board(const std::string fen, bool isAdversaryWhite){
     isAdversaryWhite = isAdversaryWhite;
@@ -88,12 +85,9 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
 
 }
 
-uint64_t Board::getLegalMoves(const int pos){
+uint64_t Board::applyLegalMoveValidation(const int pos, uint64_t moves){
 
-    if(pos < 0 || pos > 63) throw std::runtime_error("The position provided, is not in range 0-63");
-
-
-    uint64_t legalMoves = getPseudoLegalMoves(pos);
+    uint64_t legalMoves = moves;
 
     enum Pieces pieceType = (Pieces)getPieceEnum(pos);
 
@@ -109,6 +103,22 @@ uint64_t Board::getLegalMoves(const int pos){
         //Additionally filter out the squares the pawns control (but can't attack becuase there is not piece there)
         legalMoves &= ~pawnControlledSquare(!isWhite);
 
+
+	//For each sliding piece attacker, remove the squares that the king hides inline with the attacking ray
+	
+	uint64_t attackers = getAttackers(kingLocation,!isWhite);
+	
+
+	while(attackers){
+
+		int attackerLoc = __builtin_ctzll(attackers);
+		attackers &= (attackers-1);
+
+		RaysDirection direction = convertPositionsToDirections(attackerLoc,pos);
+		legalMoves &= ~Rays[direction][attackerLoc];
+		
+	}	
+
     } 
 
     else if(isSquareAttacked(kingLocation,!isWhite)){
@@ -120,7 +130,14 @@ uint64_t Board::getLegalMoves(const int pos){
 
         int attackerLocation = __builtin_ctzll(attackers);
 
-        uint64_t blockingCapturingRay = getRay(kingLocation,attackerLocation);
+	
+        uint64_t blockingCapturingRay;
+	
+	if(getPieceEnum(attackerLocation) == Knight){
+		blockingCapturingRay = attackers;
+	}else{
+		blockingCapturingRay = getRay(kingLocation,attackerLocation);
+	}
 
         legalMoves &= blockingCapturingRay;
 
@@ -130,15 +147,47 @@ uint64_t Board::getLegalMoves(const int pos){
 
         int kingLocation = getKingLocation(isWhite);
 
-        std::string direction = convertPositionsToDirections(kingLocation,pos);
+        RaysDirection direction = convertPositionsToDirections(kingLocation,pos);
 
         legalMoves &= Rays[direction][kingLocation];
     }
 
+    return legalMoves;
+}
 
-    
+uint64_t Board::getLegalMoves(const int pos){
+
+    //Legal moves, except for pawn moves to promotion squares, handled seperately
+
+    if(pos < 0 || pos > 63) throw std::runtime_error("The position provided, is not in range 0-63");
+
+    uint64_t legalMoves = applyLegalMoveValidation(pos,getPseudoLegalMoves(pos));
+
+    enum Pieces pieceType = (Pieces)getPieceEnum(pos);
+
+    bool isWhite = isPieceWhite(pos);
+
+    //Remove pawns promting, handling seperately with multiple outcomes
+
+    if(pieceType == Pawn){
+        int promotionRow = isWhite ? 7 : 0;
+        legalMoves &= ~(RankMasks[promotionRow]);
+    }
 
     return legalMoves;
+
+}
+
+uint64_t Board::getPromotionMoves(const int pos){
+
+    Pieces pieceType = (Pieces)getPieceEnum(pos);
+    if(pieceType != Pawn) return 0ULL;
+
+    uint64_t promotionRank = isPieceWhite(pos) ? 7 : 0;
+
+    uint64_t promotionMoves = getPseudoLegalMoves(pos) & RankMasks[promotionRank];
+
+    return applyLegalMoveValidation(pos, promotionMoves);
 
 }
 
@@ -194,7 +243,7 @@ uint64_t Board::getAttacks(const int pos){
     uint64_t blockingRays = 0ULL;
     uint64_t blockers = PieceAttacks & allPieces;
 
-    const std::string directions[8] = {"North","East","South","West","NorthEast","SouthEast","SouthWest","NorthWest"};
+    const RaysDirection directions[8] = {North,East,South,West,NorthEast,SouthEast,SouthWest,NorthWest};
 
 
     //calculate blockingRays in every direction for the different sliding pieces
@@ -208,6 +257,8 @@ uint64_t Board::getAttacks(const int pos){
         if(!blockers1Direction) continue;
 
         int firstBlockerPos = getFirstBlocker(pos,directions[i]);
+	
+	if(firstBlockerPos == -1) continue;
         
         blockingRays |= Rays[directions[i]][firstBlockerPos];    
     
@@ -238,9 +289,14 @@ uint64_t Board::getAttacks(const int pos){
 uint64_t Board::getAllAttacks(bool isWhite){
 
     uint64_t attacks = 0ULL;
-    std::vector<int> pieceLocations = isWhite ? getLocationsFromBitBoard(state.whitePieceBitBoard) : getLocationsFromBitBoard(state.blackPieceBitBoard);
+    uint64_t pieceBitBoard = isWhite ? state.whitePieceBitBoard : state.blackPieceBitBoard;
 
-    for(int location : pieceLocations){
+    
+    while(pieceBitBoard){
+
+	int location = __builtin_ctzll(pieceBitBoard);
+	pieceBitBoard &= (pieceBitBoard-1);
+
         attacks |= getAttacks(location);
     }
 
@@ -258,14 +314,17 @@ uint64_t Board::getAttackers(int pos, bool attackingIsWhite){
     for (auto &[direction,offset] : Compass){
 
         int attackingPiecePos = getFirstBlocker(pos, direction);
+	
+	if(attackingPiecePos == -1) continue;
+
         Pieces pieceType = (Pieces)getPieceEnum(attackingPiecePos);
 
-        if(isPieceWhite(attackingPiecePos) == attackingIsWhite) continue;
+        if(isPieceWhite(attackingPiecePos) != attackingIsWhite) continue;
 
-        bool straightSliding = (direction == "North" || direction == "East" || direction == "West" || direction == "South");
+        bool straightSliding = (direction == North || direction == East || direction == West || direction == South);
 
-        if((straightSliding && (pieceType == Rook) || pieceType == Queen) || 
-          (!straightSliding && (pieceType == Bishop || pieceType == Queen))){
+        if((straightSliding && ((pieceType == Rook) || pieceType == Queen)) || 
+          (!straightSliding && ((pieceType == Bishop || pieceType == Queen)))){
 
             attackers |= (1ULL << attackingPiecePos);
         }
@@ -302,7 +361,7 @@ uint64_t Board::getPawnAttackers(int pos, bool attackingIsWhite){
 }
 
 uint64_t Board::pawnControlledSquare(bool controllingColourIsWhite){
-    //TODO check pawnBitBoard does not reference state, only value
+
     uint64_t pawnBitBoard = controllingColourIsWhite ? state.whitePawnBitBoard : state.blackPawnBitBoard;
     uint64_t *pawnAttacks = controllingColourIsWhite ? whitePawnAttacks : blackPawnAttacks;
     uint64_t controlledSquares = 0ULL;
@@ -331,7 +390,7 @@ uint64_t Board::getEnemyPieces(int pos){
 
 uint64_t Board::getRay(int pos1, int pos2){
     
-    std::string direction = convertPositionsToDirections(pos1,pos2);
+    RaysDirection direction = convertPositionsToDirections(pos1,pos2);
 
     uint64_t ray = Rays[direction][pos1];
    
@@ -353,24 +412,24 @@ uint64_t Board::getPinnedPieces(bool isWhite){
         uint64_t pinnedPiece = ray & getFriendlyPieces(kingLocation);
 
         int firstBlocker = getFirstBlocker(kingLocation, direction);
-        if(!firstBlocker) continue;
+        if(firstBlocker == -1) continue;
 
         //Pinned piece must be a friendly piece
         if(isPieceWhite(firstBlocker) != isPieceWhite(kingLocation))  continue;
 
         int secondBlocker = getFirstBlocker(firstBlocker,direction);
-        if(!secondBlocker) continue;
+        if(secondBlocker == -1) continue;
 
         //If the second piece is also a friendly, nothing is pinned
         if(isPieceWhite(secondBlocker) == isPieceWhite(kingLocation)) continue;
 
         enum Pieces enemyPiece = (Pieces)getPieceEnum(secondBlocker);
 
-        if((enemyPiece == Bishop || enemyPiece == Queen) && (direction == "NorthEast" || direction == "NorthWest" || direction == "SouthEast" || direction == "SouthWest")){
+        if((enemyPiece == Bishop || enemyPiece == Queen) && (direction == NorthEast || direction == NorthWest || direction == SouthEast || direction == SouthWest)){
 
             pinnedPieces |= (1ULL << firstBlocker);
 
-        }else if((enemyPiece == Rook || enemyPiece == Queen) && (direction == "North" || direction == "South" || direction == "East" || direction == "West")){
+        }else if((enemyPiece == Rook || enemyPiece == Queen) && (direction == North || direction == South || direction == East || direction == West)){
 
             pinnedPieces |= (1ULL << firstBlocker);
 
@@ -439,13 +498,13 @@ int Board::getPieceEnum(int pos){
 
 }
 
-int Board::getFirstBlocker(int pos, std::string direction){
+int Board::getFirstBlocker(int pos, RaysDirection direction){
     
     uint64_t blockers = Rays[direction][pos] & (state.whitePieceBitBoard | state.blackPieceBitBoard);
 
-    if(!blockers) return 0ULL;
+    if(!blockers) return -1; 
 
-    if(direction == "North" || direction == "East" || direction == "NorthEast" || direction == "NorthWest") return __builtin_ctzll(blockers);
+    if(direction == North || direction == East || direction == NorthEast || direction == NorthWest) return __builtin_ctzll(blockers);
          
     return 63 - __builtin_clzll(blockers);
     
@@ -488,8 +547,12 @@ void Board::updatePieceBitBoards(){
 
 }
 
-void Board::makeMove(int from, int to, int promotionPiece){
-    if(!(getLegalMoves(from) & (1ULL << to))){
+void Board::makeMove(int from, int to, int promotionPieceType){
+
+    if((promotionPieceType != -1) && !(getPromotionMoves(from) & (1ULL << to))){
+        throw std::runtime_error("Illegal move requested");
+    }
+    else if(promotionPieceType == -1 && (!((getLegalMoves(from)) & (1ULL << to)))){
         throw std::runtime_error("Illegal move requested");
     } 
 
@@ -501,10 +564,10 @@ void Board::makeMove(int from, int to, int promotionPiece){
 
     if((1ULL << to) & (state.whitePieceBitBoard | state.blackPieceBitBoard)){
         //Capturing a piece
-        int capturedBitBoard = *getBitBoardFromPiece(getPieceEnum(to),!isWhite);
+        uint64_t *capturedBitBoard = getBitBoardFromPiece(getPieceEnum(to),!isWhite);
 
         //Toggle off the captured piece
-        capturedBitBoard ^= (1ULL << to);
+        *capturedBitBoard ^= (1ULL << to);
 
         state.halfMoveClock = -1;
     }
@@ -524,7 +587,7 @@ void Board::makeMove(int from, int to, int promotionPiece){
 
         if(isWhite && convertLocationToRows(to) == 7){
             //Pawn promotes
-            uint64_t *newPieceBitBoard = getBitBoardFromPiece(promotionPiece,isWhite);
+            uint64_t *newPieceBitBoard = getBitBoardFromPiece(promotionPieceType,isWhite);
             *newPieceBitBoard |= (1ULL << to);
             *pieceBitBoard ^= (1ULL << to);
         }

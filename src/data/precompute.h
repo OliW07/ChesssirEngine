@@ -4,7 +4,8 @@
 #include <cstdint>
 #include <string>
 #include <map>
-#include <unordered_map>
+
+#include "utils/Types.h"
 
 extern uint64_t KnightMoves[64];
 extern uint64_t KingMoves[64];
@@ -15,9 +16,10 @@ extern uint64_t whitePawnMoves[64];
 extern uint64_t blackPawnMoves[64];
 extern uint64_t whitePawnAttacks[64];
 extern uint64_t blackPawnAttacks[64];
-extern std::unordered_map<std::string, uint64_t[64]> Rays;
+extern uint64_t Rays[8][64];
+extern const uint64_t RankMasks[8];
 
-extern const std::map<std::string,int> Compass;
+extern const std::map<RaysDirection,int> Compass;
        
 
 void precomputeBitBoardMoves();

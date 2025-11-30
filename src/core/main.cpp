@@ -5,8 +5,9 @@
 
 #include "board.h"
 #include "data/precompute.h"
-#include "utils/Types.h"
 #include "debug.h"
+#include "utils/Types.h"
+#include "tests/perft.h"
 
 
 void init(Board &boardInstance);
@@ -20,7 +21,7 @@ bool isPlaying = true;
 int main(){
 
     const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const std::string CUSTOM_TEST_POSITION = "4k3/8/6P1/8/7N/8/8/1r1RQ2K w - - 0 1";
+    const std::string CUSTOM_TEST_POSITION = "r1bqkbnr/pppppppp/8/8/3n4/4P3/PPPPKPPP/RNBQ1BNR w kq - 0 1";
 
     Board playingBoard(STARTING_FEN,true);
 
@@ -30,7 +31,7 @@ int main(){
 
     visualiseGraphicBoard(playingBoard.state);
 
-    gameLoop(playingBoard); 
+    gameLoop(playingBoard);
 
     return 0;
 }
@@ -53,7 +54,18 @@ void gameLoop(Board &boardInstance){
         if(boardInstance.isAdversaryTurn()){
 
                 std::string adversaryInput;
+                
+                int perftNodes = perftSearch(boardInstance);
+                std::cout << perftNodes << "\n";
 
+                for(const auto &[move,count] : moveBreakDown){
+                    std::cout << move << " : " << count << "\n";
+                }
+
+                break;
+
+
+                uint64_t moves = boardInstance.getLegalMoves(20);
                 std::cout << "Enter your move: ";
                 std::cin >> adversaryInput;
 
@@ -72,7 +84,7 @@ void gameLoop(Board &boardInstance){
                 visualiseGraphicBoard(boardInstance.state);
                 //Move the piece on the board
 
-                
+               break; 
 
 
         }else{

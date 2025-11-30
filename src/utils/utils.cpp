@@ -79,7 +79,7 @@ std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard){
     return locations;
 }
 
-std::string convertPositionsToDirections(int pos1, int pos2){
+RaysDirection convertPositionsToDirections(int pos1, int pos2){
 
     int pos1Rows = convertLocationToRows(pos1),
         pos2Rows = convertLocationToRows(pos2),
@@ -92,29 +92,36 @@ std::string convertPositionsToDirections(int pos1, int pos2){
     bool isDiagonal = abs(rowsDifference) == abs(columnsDifference);
 
     //Direction relative to pos1
-    std::string direction = "";
+    RaysDirection direction;
     
     if(rowsDifference == 0 && columnsDifference > 0){
-        direction = "West";
+        direction = West;
     }else if(rowsDifference == 0 && columnsDifference < 0){
-        direction = "East";
+        direction = East;
     }else if(columnsDifference == 0 && rowsDifference > 0){
-        direction = "South";
+        direction = South;
     }else if(columnsDifference == 0 && rowsDifference < 0){
-        direction = "North";
+        direction = North;
     }else if(rowsDifference > 0 && columnsDifference > 0 && isDiagonal){
-        direction = "SouthWest";
+        direction = SouthWest;
     }else if(rowsDifference < 0 && columnsDifference < 0 && isDiagonal){
-        direction = "NorthEast";
+        direction = NorthEast;
     }else if(rowsDifference > 0 && columnsDifference < 0 && isDiagonal){
-        direction = "SouthEast";
+        direction = SouthEast;
     }else if(rowsDifference < 0 && columnsDifference > 0 && isDiagonal){
-        direction = "NorthWest";
+        direction = NorthWest;
     }
 
     return direction;
 }
 
+std::string convertMoveToAlgebraicNotation(int pos){
+    char number = convertLocationToRows(pos) + '1';
+    char letter = convertLocationToColumns(pos) + 'a';
+
+    std::string result = std::string() + letter + number;
+    return result; 
+}
 
 int convertLocationToColumns(const int location){
     if(location < 0 || location > 63){

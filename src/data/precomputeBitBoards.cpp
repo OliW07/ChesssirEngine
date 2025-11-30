@@ -1,7 +1,6 @@
 
 #include <iostream>
 #include <cmath>
-#include <unordered_map>
 #include <map>
 #include "precompute.h"
 #include "utils/Types.h"
@@ -17,8 +16,7 @@ uint64_t blackPawnMoves[64] = {};
 uint64_t whitePawnAttacks[64] = {};
 uint64_t blackPawnAttacks[64] = {};
 
-std::unordered_map<std::string, uint64_t[64]> Rays;
-
+uint64_t Rays[8][64];
 
 void computeKnightMoves(const int pos);
 void computeKingMoves(const int pos);
@@ -29,17 +27,16 @@ void computePawnMoves(const int pos, bool isWhite);
 void computeSlidingRays(const int pos);
 
 
-const std::map<std::string,int> Compass = {
-        {"North",8},
-        {"NorthEast",9},
-        {"East",1},
-        {"SouthEast",-7},
-        {"South",-8},
-        {"SouthWest",-9},
-        {"West",-1},
-        {"NorthWest",7}
-
-    };
+const uint64_t RankMasks[8] = {
+    0x00000000000000FF,  
+    0x000000000000FF00,  
+    0x0000000000FF0000,  
+    0x00000000FF000000,  
+    0x000000FF00000000, 
+    0x0000FF0000000000, 
+    0x00FF000000000000, 
+    0xFF00000000000000   
+};
 
 
 void precomputeBitBoardMoves(){
@@ -112,18 +109,18 @@ void computeKingMoves(const int pos){
 
 void computeQueenMoves(const int pos){
 
-    QueenMoves[pos] = (Rays["North"][pos] | Rays["East"][pos] | Rays["South"][pos] | Rays["West"][pos] | Rays["NorthEast"][pos] | Rays["SouthEast"][pos] | Rays["SouthWest"][pos] | Rays["NorthWest"][pos]);
+    QueenMoves[pos] = (Rays[North][pos] | Rays[East][pos] | Rays[South][pos] | Rays[West][pos] | Rays[NorthEast][pos] | Rays[SouthEast][pos] | Rays[SouthWest][pos] | Rays[NorthWest][pos]);
     
 }
 
 void computeRookMoves(const int pos){
 
-    RookMoves[pos] = (Rays["North"][pos] | Rays["East"][pos] | Rays["South"][pos] | Rays["West"][pos]);
+    RookMoves[pos] = (Rays[North][pos] | Rays[East][pos] | Rays[South][pos] | Rays[West][pos]);
 }
 
 void computeBishopMoves(const int pos){
 
-    BishopMoves[pos] = (Rays["NorthEast"][pos] | Rays["SouthEast"][pos] | Rays["SouthWest"][pos] | Rays["NorthWest"][pos]);
+    BishopMoves[pos] = (Rays[NorthEast][pos] | Rays[SouthEast][pos] | Rays[SouthWest][pos] | Rays[NorthWest][pos]);
     
 }
 
@@ -176,7 +173,7 @@ void computeSlidingRays(const int pos){
 
         int newLocation = pos + offset;
 
-        bool diagonalSliding = (direction == "NorthEast" || direction == "SouthEast" || direction == "SouthWest" || direction == "NorthWest");
+        bool diagonalSliding = (direction == NorthEast || direction == SouthEast || direction == SouthWest || direction == NorthWest);
 
         
 
