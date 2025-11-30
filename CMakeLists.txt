@@ -17,6 +17,7 @@ set(ENGINE_SOURCES
     src/utils/utils.cpp
     src/data/precomputeBitBoards.cpp
     tools/debug.cpp
+    tools/tests/perft.cpp
 )
 
 
@@ -29,6 +30,9 @@ add_executable(
 target_include_directories(chess_engine 
     PUBLIC 
         src  
-        src/data    
-        tools      
+        src/data  
+        src/utils
+        src/core  
+        tools
+        tools/tests      
 )
