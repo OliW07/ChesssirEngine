@@ -139,7 +139,7 @@ bool posInBounds(int pos){
 }
 
 bool pieceWrapsTheBoard(int pos1, int pos2){
-    int columnsDifference = abs(convertLocationToColumns(pos1) - convertLocationToColumns(pos1));
+    int columnsDifference = abs(convertLocationToColumns(pos1) - convertLocationToColumns(pos2));
     int rowsDifference = abs(convertLocationToRows(pos1) - convertLocationToRows(pos2));
 
     return !((columnsDifference < 2) && (rowsDifference < 2));

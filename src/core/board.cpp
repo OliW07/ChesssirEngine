@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <string>
 #include <stdexcept>
 #include <sstream>
@@ -6,6 +7,7 @@
 #include <algorithm>
 
 #include "board.h"
+#include "Types.h"
 #include "precompute.h"
 #include "utils/Types.h"
 #include "debug.h"
@@ -93,34 +95,45 @@ uint64_t Board::applyLegalMoveValidation(const int pos, uint64_t moves){
 
     
     if(pieceType == King){
-        //The king can't move to an attacked square
-        legalMoves &= ~getAllAttacks(!isWhite);
 
-        //Additionally filter out the squares the pawns control (but can't attack becuase there is not piece there)
-        legalMoves &= ~pawnControlledSquare(!isWhite);
+        //For each move, check the square is not controlled by the enemy and disallow king from castling whilst in check
+        uint64_t movesClone = legalMoves;
+
+        while(movesClone){
+
+            int move = __builtin_ctzll(movesClone);
+            movesClone &= (movesClone - 1);
+
+            if(isSquareAttacked(move,!isWhite)) legalMoves ^= (1ULL << move);  
+
+            if(abs(convertLocationToColumns(move) - convertLocationToColumns(pos)) > 1 && (isSquareAttacked(pos, !isWhite))) legalMoves ^= (1ULL << move);
 
 
-	//For each sliding piece attacker, remove the squares that the king hides inline with the attacking ray
+        }
+
+	    //For each sliding piece attacker, remove the squares that the king hides inline with the attacking ray
 	
-	uint64_t attackers = getAttackers(kingLocation,!isWhite);
-	
+        uint64_t attackers = getAttackers(kingLocation,!isWhite);
+        
 
-	while(attackers){
-
-
-		int attackerLoc = __builtin_ctzll(attackers);
-		attackers &= (attackers-1);
-
-        enum Pieces attackerType = (Pieces)getPieceEnum(attackerLoc);
-
-        if(attackerType == Knight || attackerType == King || attackerType == Pawn) continue;
+        while(attackers){
 
 
-		RaysDirection direction = convertPositionsToDirections(attackerLoc,pos);
-		legalMoves &= ~Rays[direction][attackerLoc];
-		
-	}	
+            int attackerLoc = __builtin_ctzll(attackers);
+            attackers &= (attackers-1);
 
+            enum Pieces attackerType = (Pieces)getPieceEnum(attackerLoc);
+
+            if(attackerType == Knight || attackerType == King || attackerType == Pawn) continue;
+
+
+            RaysDirection direction = convertPositionsToDirections(attackerLoc,pos);
+            legalMoves &= ~Rays[direction][attackerLoc];
+            
+        }	
+        
+
+        
     } 
 
     else if(isSquareAttacked(kingLocation,!isWhite)){
@@ -271,7 +284,7 @@ uint64_t Board::getAttacks(const int pos){
 
     if(pieceType == Pawn && state.enPassantSquare != -1){
         
-        bool pieceWraps= pieceWrapsTheBoard(state.enPassantSquare,pos);
+        bool pieceWraps = pieceWrapsTheBoard(state.enPassantSquare,pos);
 
         //The pawn must be diagonally next to the enpassant square to move there
         if((isPieceWhite(pos) && ((state.enPassantSquare - 9 == pos) || (state.enPassantSquare - 7 == pos))) && !pieceWraps){
@@ -600,6 +613,12 @@ void Board::makeMove(int from, int to, int promotionPieceType){
         state.halfMoveClock = -1;
     }
 
+    else if(pieceType == Pawn && to == state.enPassantSquare && state.enPassantSquare != -1){
+        uint64_t *capturedBitBoard = getBitBoardFromPiece(Pawn,!isWhite);
+        int capturePos = isWhite ? to - 8 : to + 8;
+        *capturedBitBoard ^= (1ULL << capturePos);
+        state.halfMoveClock = -1;
+    }
     *pieceBitBoard |= (1ULL << to);
     *pieceBitBoard ^= (1ULL << from);
 
@@ -759,4 +778,3 @@ void Board::parseFenString(std::string fen){
     tokens >> state.halfMoveClock;
     tokens >> state.fullMoveClock;
 }
-
