@@ -42,3 +42,8 @@ Thumbs.db
 *.tmp
 *.temp
 *~
+
+
+.cache/
+compile_commands.json
+
