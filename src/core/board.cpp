@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "board.h"
+#include "precompute.h"
 #include "utils/Types.h"
 #include "debug.h"
 
@@ -535,7 +536,40 @@ bool Board::isSquareEmpty(int pos){
 }
 
 bool Board::isSquareAttacked(int pos, bool attackingColourIsWhite){
-    return (1ULL << pos & getAllAttacks(attackingColourIsWhite));
+    //return (1ULL << pos & getAllAttacks(attackingColourIsWhite));
+    if (getPawnAttackers(pos, attackingColourIsWhite)) return true;
+
+    uint64_t enemyKnights = attackingColourIsWhite ? state.whiteKnightBitBoard : state.blackKnightBitBoard;
+    uint64_t enemyKing    = attackingColourIsWhite ? state.whiteKingBitBoard   : state.blackKingBitBoard;
+    uint64_t enemyRooks   = attackingColourIsWhite ? state.whiteRookBitBoard   : state.blackRookBitBoard;
+    uint64_t enemyBishops = attackingColourIsWhite ? state.whiteBishopBitBoard : state.blackBishopBitBoard;
+    uint64_t enemyQueens  = attackingColourIsWhite ? state.whiteQueenBitBoard  : state.blackQueenBitBoard;
+
+    if(KnightMoves[pos] & enemyKnights) return true;
+    if(KingMoves[pos] & enemyKing) return true;
+    
+    RaysDirection diagonals[4] = {NorthEast,NorthWest,SouthEast,SouthWest};
+    RaysDirection straights[4] = {North,South,East,West};
+
+    for(RaysDirection direction : diagonals){
+
+        int attackerPos = getFirstBlocker(pos, direction);
+        if(attackerPos == -1) continue;
+
+        if((1ULL << attackerPos) & (enemyBishops | enemyQueens)) return true;
+
+    }
+
+    for(RaysDirection direction : straights){
+
+         int attackerPos = getFirstBlocker(pos, direction);
+         if(attackerPos == -1) continue;
+
+         if((1ULL << attackerPos) & (enemyRooks | enemyQueens)) return true;
+    }
+
+    return false;
+
 }
 
 
@@ -603,10 +637,10 @@ void Board::makeMove(int from, int to, int promotionPieceType){
 
     }if(pieceType == Rook && state.castlingRights > 0){
         //Remove coresponding castling letter
-        if(isWhite && from == 0) state.castlingRights ^= 4;
-        if(isWhite && from == 7) state.castlingRights ^= 8;
-        if(!isWhite && from == 63) state.castlingRights ^= 2;
-        if(!isWhite && from == 56) state.castlingRights ^= 1;
+        if(isWhite && from == 0) state.castlingRights &= ~4;
+        if(isWhite && from == 7) state.castlingRights &= ~8;
+        if(!isWhite && from == 63) state.castlingRights &= ~2;
+        if(!isWhite && from == 56) state.castlingRights &= ~1;
     }
 
     updatePieceBitBoards();

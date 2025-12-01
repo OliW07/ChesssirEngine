@@ -7,7 +7,7 @@
 
 std::map<std::string,int> moveBreakDown = {};
 
-int maximum = 5;
+int maximum = 6;
 
 
 int perftSearch(Board &boardInstance, int maxDepth){
