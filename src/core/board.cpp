@@ -3,7 +3,6 @@
 #include <sstream>
 #include <cstdint>
 #include <iostream>
-#include <unordered_map>
 #include <algorithm>
 
 #include "board.h"
@@ -22,7 +21,7 @@ extern uint64_t blackPawnAttacks[64];
 extern uint64_t Rays[8][64];
 
 Board::Board(const std::string fen, bool isAdversaryWhite){
-    isAdversaryWhite = isAdversaryWhite;
+    this->isAdversaryWhite = isAdversaryWhite;
     parseFenString(fen);
 }
 
@@ -55,30 +54,26 @@ uint64_t Board::getPseudoLegalMoves(const int pos){
 
     //Add castling
 
-    if(pieceType == King && state.castlingRights != "-"){
+    if(pieceType == King && state.castlingRights > 0){
 
-        for(char c : state.castlingRights){
-            if(isupper(c) && isPieceWhite(pos)){
-                if(c == 'K' && !isSquareAttacked(5,false) && !isSquareAttacked(6,false) && isSquareEmpty(5) && isSquareEmpty(6)){
-                    //White kingside castling square
+        
+        if(isPieceWhite(pos) && (state.castlingRights & 8)  && !isSquareAttacked(5,false) && !isSquareAttacked(6,false) && isSquareEmpty(5) && isSquareEmpty(6)){
+                //White kingside castling square
                     pseudoLegalMoves |= (1ULL << 6);
-                }else if(c == 'Q' && !isSquareAttacked(3,false) && !isSquareAttacked(2,false) && !isSquareAttacked(1,false) && isSquareEmpty(3) && isSquareEmpty(2) && isSquareEmpty(1)){
+        }else if(isPieceWhite(pos) && (state.castlingRights & 4) && !isSquareAttacked(3,false) && !isSquareAttacked(2,false) && !isSquareAttacked(1,false) && isSquareEmpty(3) && isSquareEmpty(2) && isSquareEmpty(1)){
                     //White queenside castling square
                     pseudoLegalMoves |= (1ULL << 2);
                 }
-            }else if(islower(c) && !isPieceWhite(pos)){
-                if(c == 'k' && !isSquareAttacked(61,true) && !isSquareAttacked(62,true) && isSquareEmpty(61) && isSquareEmpty(62)){
-                    //Black kingside castling square
-                    pseudoLegalMoves |= (1ULL << 62);
-                }else if(c == 'q' && !isSquareAttacked(57,true) && !isSquareAttacked(58,true) && !isSquareAttacked(59,true)&& isSquareEmpty(57) && isSquareEmpty(58) && isSquareEmpty(59)){
-                    //Black queenside castling square
-                    pseudoLegalMoves |= (1ULL << 58);
-                }
-                    
-            }
-        } 
-        
-    }
+        else if(!isPieceWhite(pos) && (state.castlingRights & 2)&& !isSquareAttacked(61,true) && !isSquareAttacked(62,true) && isSquareEmpty(61) && isSquareEmpty(62)){
+            
+            //Black kingside castling square
+            pseudoLegalMoves |= (1ULL << 62);
+
+        }else if(!isPieceWhite(pos) && (state.castlingRights & 1)&& !isSquareAttacked(57,true) && !isSquareAttacked(58,true) && !isSquareAttacked(59,true)&& isSquareEmpty(57) && isSquareEmpty(58) && isSquareEmpty(59)){
+          //Black queenside castling square
+            pseudoLegalMoves |= (1ULL << 58);
+        }
+}
 
 
     return pseudoLegalMoves;
@@ -111,8 +106,14 @@ uint64_t Board::applyLegalMoveValidation(const int pos, uint64_t moves){
 
 	while(attackers){
 
+
 		int attackerLoc = __builtin_ctzll(attackers);
 		attackers &= (attackers-1);
+
+        enum Pieces attackerType = (Pieces)getPieceEnum(attackerLoc);
+
+        if(attackerType == Knight || attackerType == King || attackerType == Pawn) continue;
+
 
 		RaysDirection direction = convertPositionsToDirections(attackerLoc,pos);
 		legalMoves &= ~Rays[direction][attackerLoc];
@@ -549,13 +550,6 @@ void Board::updatePieceBitBoards(){
 
 void Board::makeMove(int from, int to, int promotionPieceType){
 
-    if((promotionPieceType != -1) && !(getPromotionMoves(from) & (1ULL << to))){
-        throw std::runtime_error("Illegal move requested");
-    }
-    else if(promotionPieceType == -1 && (!((getLegalMoves(from)) & (1ULL << to)))){
-        throw std::runtime_error("Illegal move requested");
-    } 
-
     Pieces pieceType = (Pieces)getPieceEnum(from);
     bool isWhite = isPieceWhite(from);
 
@@ -599,27 +593,23 @@ void Board::makeMove(int from, int to, int promotionPieceType){
         state.enPassantSquare = -1;
     }
 
-    if(pieceType == King && state.castlingRights != "-"){
+    if(pieceType == King && state.castlingRights > 0){
+
         if(isWhite){
-            state.castlingRights.erase(std::remove_if(state.castlingRights.begin(), state.castlingRights.end(), [](char c) {
-                return !std::isupper(c); 
-            }), state.castlingRights.end());
+            state.castlingRights ^= 12;
         }else{
-            state.castlingRights.erase(std::remove_if(state.castlingRights.begin(), state.castlingRights.end(), [](char c) {
-                return !std::islower(c); 
-            }), state.castlingRights.end());
+            state.castlingRights ^= 3;
         }
-    }if(pieceType == Rook && state.castlingRights != "-"){
+
+    }if(pieceType == Rook && state.castlingRights > 0){
         //Remove coresponding castling letter
-        if(isWhite && from == 0) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'K'), state.castlingRights.end());
-        if(isWhite && from == 7) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'Q'), state.castlingRights.end());
-        if(!isWhite && from == 63) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'k'), state.castlingRights.end());
-        if(isWhite && from == 56) state.castlingRights.erase(std::remove(state.castlingRights.begin(), state.castlingRights.end(), 'q'), state.castlingRights.end());
+        if(isWhite && from == 0) state.castlingRights ^= 4;
+        if(isWhite && from == 7) state.castlingRights ^= 8;
+        if(!isWhite && from == 63) state.castlingRights ^= 2;
+        if(!isWhite && from == 56) state.castlingRights ^= 1;
     }
 
     updatePieceBitBoards();
-
-    if(state.castlingRights == "") state.castlingRights = "-";
 
 
     if(state.whiteToMove != state.whiteStarts) state.fullMoveClock++;
@@ -702,8 +692,31 @@ void Board::parseFenString(std::string fen){
     state.whiteToMove = (token == "w");
     state.whiteStarts = (token == "w");
 
-    tokens >> state.castlingRights;
+    tokens >> token;
     
+    for(char c : token){
+        
+        switch(c){
+            case('K'):
+                state.castlingRights += 8;
+                break;  
+                
+            case('Q'):
+                state.castlingRights += 4;
+                break;
+            
+            case('k'):
+                state.castlingRights += 2;
+                break;
+            
+            case('q'):
+                state.castlingRights += 1;
+                break;
+            
+        }
+	} 
+
+
     tokens >> token;
 
     if(token == "-") state.enPassantSquare = -1;

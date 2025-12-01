@@ -36,7 +36,10 @@ struct BoardState{
     int enPassantSquare = -1;
     int halfMoveClock = 0;
     int fullMoveClock = 0;
-    std::string castlingRights = "";
+
+
+    //least four signficant bits represent, White Kingside, White Queenside, BlackKingside, BlackQueenside
+    uint8_t castlingRights = 0;
 };
 
 const std::unordered_map<char,int> promotionPieceCharIntConversion = {
