@@ -4,9 +4,6 @@
 #include <vector>
 
 #include "utils/Types.h"
-#include "data/precompute.h"
-
-
     
 class Board{
 

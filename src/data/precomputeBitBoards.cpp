@@ -1,22 +1,35 @@
 
 #include <iostream>
 #include <cmath>
-#include <map>
 #include "precompute.h"
 #include "utils/Types.h"
-#include "debug.h"
 
-uint64_t KnightMoves[64] = {};
-uint64_t KingMoves[64] = {};
-uint64_t QueenMoves[64] = {};
-uint64_t RookMoves[64] = {};
-uint64_t BishopMoves[64] = {};
-uint64_t whitePawnMoves[64] = {};
-uint64_t blackPawnMoves[64] = {};
-uint64_t whitePawnAttacks[64] = {};
-uint64_t blackPawnAttacks[64] = {};
+namespace precomputedData {
 
-uint64_t Rays[8][64];
+    uint64_t knightMoves[64] = {};
+    uint64_t kingMoves[64] = {};
+    uint64_t queenMoves[64] = {};
+    uint64_t rookMoves[64] = {};
+    uint64_t bishopMoves[64] = {};
+    uint64_t whitePawnMoves[64] = {};
+    uint64_t blackPawnMoves[64] = {};
+    uint64_t whitePawnAttacks[64] = {};
+    uint64_t blackPawnAttacks[64] = {};
+
+    uint64_t rays[8][64] = {};
+
+
+    uint64_t rankMasks[8] = {
+        0x00000000000000FF,  
+        0x000000000000FF00,  
+        0x0000000000FF0000,  
+        0x00000000FF000000,  
+        0x000000FF00000000, 
+        0x0000FF0000000000, 
+        0x00FF000000000000, 
+        0xFF00000000000000   
+    };
+};
 
 void computeKnightMoves(const int pos);
 void computeKingMoves(const int pos);
@@ -27,16 +40,6 @@ void computePawnMoves(const int pos, bool isWhite);
 void computeSlidingRays(const int pos);
 
 
-const uint64_t RankMasks[8] = {
-    0x00000000000000FF,  
-    0x000000000000FF00,  
-    0x0000000000FF0000,  
-    0x00000000FF000000,  
-    0x000000FF00000000, 
-    0x0000FF0000000000, 
-    0x00FF000000000000, 
-    0xFF00000000000000   
-};
 
 
 void precomputeBitBoardMoves(){
@@ -80,7 +83,7 @@ void computeKnightMoves(const int pos){
             continue;
         }
         
-        KnightMoves[pos] |= (1ULL << newLocation);
+        precomputedData::knightMoves[pos] |= (1ULL << newLocation);
         
     }
 }
@@ -102,25 +105,25 @@ void computeKingMoves(const int pos){
 
         if((columnDifference > 1) || (rowDifference > 1)) continue;
             
-        KingMoves[pos] |= (1ULL << newLocation);
+        precomputedData::kingMoves[pos] |= (1ULL << newLocation);
         
     }
 }
 
 void computeQueenMoves(const int pos){
 
-    QueenMoves[pos] = (Rays[North][pos] | Rays[East][pos] | Rays[South][pos] | Rays[West][pos] | Rays[NorthEast][pos] | Rays[SouthEast][pos] | Rays[SouthWest][pos] | Rays[NorthWest][pos]);
+    precomputedData::queenMoves[pos] = (precomputedData::rays[North][pos] | precomputedData::rays[East][pos] | precomputedData::rays[South][pos] | precomputedData::rays[West][pos] | precomputedData::rays[NorthEast][pos] | precomputedData::rays[SouthEast][pos] | precomputedData::rays[SouthWest][pos] | precomputedData::rays[NorthWest][pos]);
     
 }
 
 void computeRookMoves(const int pos){
 
-    RookMoves[pos] = (Rays[North][pos] | Rays[East][pos] | Rays[South][pos] | Rays[West][pos]);
+    precomputedData::rookMoves[pos] = (precomputedData::rays[North][pos] | precomputedData::rays[East][pos] | precomputedData::rays[South][pos] | precomputedData::rays[West][pos]);
 }
 
 void computeBishopMoves(const int pos){
 
-    BishopMoves[pos] = (Rays[NorthEast][pos] | Rays[SouthEast][pos] | Rays[SouthWest][pos] | Rays[NorthWest][pos]);
+    precomputedData::bishopMoves[pos] = (precomputedData::rays[NorthEast][pos] | precomputedData::rays[SouthEast][pos] | precomputedData::rays[SouthWest][pos] | precomputedData::rays[NorthWest][pos]);
     
 }
 
@@ -148,12 +151,12 @@ void computePawnMoves(const int pos, bool isWhite){
         
         if(i == 1){
             //Straight movement, pawn move
-            if(isWhite) whitePawnMoves[pos] |= (1ULL << newLocation);
-            else blackPawnMoves[pos] |= (1ULL << newLocation);
+            if(isWhite) precomputedData::whitePawnMoves[pos] |= (1ULL << newLocation);
+            else precomputedData::blackPawnMoves[pos] |= (1ULL << newLocation);
         }else{
             //Diagonal movement, pawn attack
-            if(isWhite) whitePawnAttacks[pos] |= (1ULL << newLocation);
-            else blackPawnAttacks[pos] |= (1ULL << newLocation);
+            if(isWhite) precomputedData::whitePawnAttacks[pos] |= (1ULL << newLocation);
+            else precomputedData::blackPawnAttacks[pos] |= (1ULL << newLocation);
         }
         
         
@@ -161,8 +164,8 @@ void computePawnMoves(const int pos, bool isWhite){
 
     //If a pawn is on the starting rank they can move forwards 2 spaces, adding the extra space
 
-    if(isWhite && convertLocationToRows(pos) == 1) whitePawnMoves[pos] |= (1ULL << (pos+16));
-    else if(!isWhite && convertLocationToRows(pos) == 6) blackPawnMoves[pos] |= (1ULL << (pos-16));
+    if(isWhite && convertLocationToRows(pos) == 1) precomputedData::whitePawnMoves[pos] |= (1ULL << (pos+16));
+    else if(!isWhite && convertLocationToRows(pos) == 6) precomputedData::blackPawnMoves[pos] |= (1ULL << (pos-16));
     
 }
 
@@ -177,7 +180,7 @@ void computeSlidingRays(const int pos){
 
         
 
-        uint64_t *RayBitBoard_p = &Rays[direction][pos];
+        uint64_t *RayBitBoard_p = &precomputedData::rays[direction][pos];
 
         //Check if the new location is on the board, before running helper functions
 

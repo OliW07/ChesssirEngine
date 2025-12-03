@@ -7,19 +7,24 @@
 
 #include "utils/Types.h"
 
-extern uint64_t KnightMoves[64];
-extern uint64_t KingMoves[64];
-extern uint64_t QueenMoves[64];
-extern uint64_t RookMoves[64];
-extern uint64_t BishopMoves[64];
-extern uint64_t whitePawnMoves[64];
-extern uint64_t blackPawnMoves[64];
-extern uint64_t whitePawnAttacks[64];
-extern uint64_t blackPawnAttacks[64];
-extern uint64_t Rays[8][64];
-extern const uint64_t RankMasks[8];
 
-extern const std::map<RaysDirection,int> Compass;
+namespace precomputedData{
+
+    extern uint64_t knightMoves[64];
+    extern uint64_t kingMoves[64];
+    extern uint64_t queenMoves[64];
+    extern uint64_t rookMoves[64];
+    extern uint64_t bishopMoves[64];
+    extern uint64_t whitePawnMoves[64];
+    extern uint64_t blackPawnMoves[64];
+    extern uint64_t whitePawnAttacks[64];
+    extern uint64_t blackPawnAttacks[64];
+    extern uint64_t rays[8][64];
+    extern uint64_t rankMasks[8];
+
+    extern std::map<RaysDirection,int> compass;
+}
+
        
 
 void precomputeBitBoardMoves();

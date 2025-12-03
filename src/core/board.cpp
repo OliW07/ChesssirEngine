@@ -12,16 +12,7 @@
 #include "utils/Types.h"
 #include "debug.h"
 
-extern uint64_t KnightMoves[64];
-extern uint64_t KingMoves[64];
-extern uint64_t QueenMoves[64];
-extern uint64_t RookMoves[64];
-extern uint64_t BishopMoves[64];
-extern uint64_t whitePawnMoves[64];
-extern uint64_t blackPawnMoves[64];
-extern uint64_t whitPawnAttacks[64];
-extern uint64_t blackPawnAttacks[64];
-extern uint64_t Rays[8][64];
+using namespace precomputedData;
 
 Board::Board(const std::string fen, bool isAdversaryWhite){
     this->isAdversaryWhite = isAdversaryWhite;
@@ -129,7 +120,7 @@ uint64_t Board::applyLegalMoveValidation(const int pos, uint64_t moves){
 
 
             RaysDirection direction = convertPositionsToDirections(attackerLoc,pos);
-            legalMoves &= ~Rays[direction][attackerLoc];
+            legalMoves &= ~rays[direction][attackerLoc];
             
         }	
         
@@ -176,7 +167,7 @@ uint64_t Board::applyLegalMoveValidation(const int pos, uint64_t moves){
 
         RaysDirection direction = convertPositionsToDirections(kingLocation,pos);
 
-        legalMoves &= Rays[direction][kingLocation];
+        legalMoves &= rays[direction][kingLocation];
     }
 
     //Taking enpassant removes two pieces, disallow if both pieces are pinned
@@ -201,7 +192,6 @@ uint64_t Board::applyLegalMoveValidation(const int pos, uint64_t moves){
                 
                 updatePieceBitBoards();
 
-               // If enpassant vicitm is horizontally pinned, not if vertical, as the attacking piece would cover the attack making it legal.
                 if((getPinnedPieces(isWhite, true) & (1ULL << enpassantVictimLoc)) && (convertLocationToRows(pos) == convertLocationToRows(kingLocation))){
                     legalMoves ^= (1ULL << move);
                 }
@@ -234,7 +224,7 @@ uint64_t Board::getLegalMoves(const int pos){
 
     if(pieceType == Pawn){
         int promotionRow = isWhite ? 7 : 0;
-        legalMoves &= ~(RankMasks[promotionRow]);
+        legalMoves &= ~(rankMasks[promotionRow]);
     }
 
     return legalMoves;
@@ -248,7 +238,7 @@ uint64_t Board::getPromotionMoves(const int pos){
 
     uint64_t promotionRank = isPieceWhite(pos) ? 7 : 0;
 
-    uint64_t promotionMoves = getPseudoLegalMoves(pos) & RankMasks[promotionRank];
+    uint64_t promotionMoves = getPseudoLegalMoves(pos) & rankMasks[promotionRank];
 
     return applyLegalMoveValidation(pos, promotionMoves);
 
@@ -275,23 +265,23 @@ uint64_t Board::getAttacks(const int pos){
             PieceAttacks &= (isPieceWhite(pos) ? state.blackPieceBitBoard : state.whitePieceBitBoard);
             break;
         case Knight:
-            PieceAttacks = KnightMoves[pos];
+            PieceAttacks = knightMoves[pos];
             break;
         case Bishop:
-            PieceAttacks = BishopMoves[pos];
+            PieceAttacks = bishopMoves[pos];
             start = 4;
             end = 8;
             break;
         case Rook:
-            PieceAttacks = RookMoves[pos];
+            PieceAttacks = rookMoves[pos];
             start = 0;
             end = 4;
             break;
         case King:
-            PieceAttacks = KingMoves[pos];
+            PieceAttacks = kingMoves[pos];
             break;
         case Queen:
-            PieceAttacks = QueenMoves[pos];
+            PieceAttacks = queenMoves[pos];
             start = 0;
             end = 8;
             break;
@@ -315,7 +305,7 @@ uint64_t Board::getAttacks(const int pos){
 
         if(!blockers) break;
 
-        uint64_t blockers1Direction = blockers & Rays[directions[i]][pos];
+        uint64_t blockers1Direction = blockers & rays[directions[i]][pos];
 
         if(!blockers1Direction) continue;
 
@@ -323,7 +313,7 @@ uint64_t Board::getAttacks(const int pos){
 	
 	if(firstBlockerPos == -1) continue;
         
-        blockingRays |= Rays[directions[i]][firstBlockerPos];    
+        blockingRays |= rays[directions[i]][firstBlockerPos];    
     
     }
 
@@ -372,7 +362,7 @@ uint64_t Board::getAttackers(int pos, bool attackingIsWhite){
 
     attackers |= getPawnAttackers(pos, attackingIsWhite);
 
-    attackers |= (attackingIsWhite ? (KnightMoves[pos] & state.whiteKnightBitBoard) : (KnightMoves[pos] & state.blackKnightBitBoard));
+    attackers |= (attackingIsWhite ? (knightMoves[pos] & state.whiteKnightBitBoard) : (knightMoves[pos] & state.blackKnightBitBoard));
 
     for (auto &[direction,offset] : Compass){
 
@@ -457,9 +447,9 @@ uint64_t Board::getRay(int pos1, int pos2){
     
     RaysDirection direction = convertPositionsToDirections(pos1,pos2);
 
-    uint64_t ray = Rays[direction][pos1];
+    uint64_t ray = rays[direction][pos1];
    
-    ray &= ~Rays[direction][pos2];
+    ray &= ~rays[direction][pos2];
 
     return ray;
 }
@@ -471,7 +461,7 @@ uint64_t Board::getPinnedPieces(bool isWhite, bool includeEnemies){
     
     for (auto const &[direction,offset] : Compass){
 
-        uint64_t ray = Rays[direction][kingLocation];
+        uint64_t ray = rays[direction][kingLocation];
 
         int firstBlocker = getFirstBlocker(kingLocation, direction);
         if(firstBlocker == -1) continue;
@@ -562,7 +552,7 @@ int Board::getPieceEnum(int pos){
 
 int Board::getFirstBlocker(int pos, RaysDirection direction){
     
-    uint64_t blockers = Rays[direction][pos] & (state.whitePieceBitBoard | state.blackPieceBitBoard);
+    uint64_t blockers = rays[direction][pos] & (state.whitePieceBitBoard | state.blackPieceBitBoard);
 
     if(!blockers) return -1; 
 
@@ -605,8 +595,8 @@ bool Board::isSquareAttacked(int pos, bool attackingColourIsWhite){
     uint64_t enemyBishops = attackingColourIsWhite ? state.whiteBishopBitBoard : state.blackBishopBitBoard;
     uint64_t enemyQueens  = attackingColourIsWhite ? state.whiteQueenBitBoard  : state.blackQueenBitBoard;
 
-    if(KnightMoves[pos] & enemyKnights) return true;
-    if(KingMoves[pos] & enemyKing) return true;
+    if(knightMoves[pos] & enemyKnights) return true;
+    if(kingMoves[pos] & enemyKing) return true;
     
     RaysDirection diagonals[4] = {NorthEast,NorthWest,SouthEast,SouthWest};
     RaysDirection straights[4] = {North,South,East,West};
