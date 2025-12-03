@@ -21,9 +21,10 @@ bool isPlaying = true;
 int main(){
 
     const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const std::string CUSTOM_TEST_POSITION = "r1bqkbnr/pppppppp/8/8/3n4/4P3/PPPPKPPP/RNBQ1BNR w kq - 0 1";
+    const std::string CUSTOM_TEST_POSITION = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10";
 
-    Board playingBoard(STARTING_FEN,true);
+
+    Board playingBoard(CUSTOM_TEST_POSITION,true);
 
     init(playingBoard);
 
@@ -54,8 +55,7 @@ void gameLoop(Board &boardInstance){
         if(boardInstance.isAdversaryTurn()){
 
                 std::string adversaryInput;
-                
-                int perftNodes = perftSearch(boardInstance);
+                uint64_t perftNodes = perftSearch(boardInstance);
                 std::cout << perftNodes << "\n";
 
                 for(const auto &[move,count] : moveBreakDown){
@@ -64,8 +64,7 @@ void gameLoop(Board &boardInstance){
 
                 break;
 
-
-                uint64_t moves = boardInstance.getLegalMoves(20);
+                uint64_t moves = boardInstance.getLegalMoves(33);
                 std::cout << "Enter your move: ";
                 std::cin >> adversaryInput;
 

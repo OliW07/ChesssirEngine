@@ -39,7 +39,7 @@ class Board{
         uint64_t getAttackers(int pos, bool attackingIsWhite);
         uint64_t pawnControlledSquare(bool controllingColourIsWhite);
         uint64_t getRay(int pos1, int pos2);
-        uint64_t getPinnedPieces(bool isWhite);
+        uint64_t getPinnedPieces(bool isWhite, bool includeEnemies=false);
         uint64_t* getBitBoardFromPiece(int pieceEnum, bool isWhite);
         
         void makeMove(int from, int to, int promotionPieceType);
