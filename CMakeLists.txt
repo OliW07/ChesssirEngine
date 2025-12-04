@@ -16,7 +16,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(ENGINE_SOURCES
     src/core/main.cpp
     src/core/board.cpp
+    src/core/moveGenerator.cpp
+    src/core/attackHandler.cpp
     src/utils/utils.cpp
+    src/utils/fenHelper.cpp
     src/data/precomputeBitBoards.cpp
     tools/debug.cpp
     tools/tests/perft.cpp

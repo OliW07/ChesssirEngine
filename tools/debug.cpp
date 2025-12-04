@@ -53,18 +53,6 @@ void visualiseGraphicBoard(BoardState state){
                 blackKing = state.blackKingBitBoard & (1ULL << pos),
                 blackQueen = state.blackQueenBitBoard & (1ULL << pos);
 
-            /*state.whitePawnBitBoard <<= 1;
-            state.whiteBishopBitBoard <<= 1;
-            state.whiteKnightBitBoard <<= 1;
-            state.whiteRookBitBoard <<= 1;
-            state.whiteKingBitBoard <<= 1;
-            state.whiteQueenBitBoard <<= 1;
-            state.blackPawnBitBoard <<= 1;
-            state.blackKnightBitBoard <<= 1;
-            state.blackBishopBitBoard <<= 1;
-            state.blackRookBitBoard <<= 1;
-            state.blackKingBitBoard <<= 1;
-            state.blackQueenBitBoard <<= 1;*/
 
             if(whitePawn) temp = 'P';
             else if(whiteBishop) temp = 'B';

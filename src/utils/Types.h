@@ -85,5 +85,6 @@ std::string convertMoveToAlgebraicNotation(int pos);
 std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation);
 std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard);
 
+void updatePieceBitBoards(BoardState &state);
 
 #endif

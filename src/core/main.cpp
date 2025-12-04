@@ -8,7 +8,7 @@
 #include "debug.h"
 #include "utils/Types.h"
 #include "tests/perft.h"
-
+#include "moveGenerator.h"
 
 void init(Board &boardInstance);
 void gameLoop(Board &boardInstance);
@@ -25,7 +25,6 @@ int main(){
 
 
     Board playingBoard(CUSTOM_TEST_POSITION,true);
-
     init(playingBoard);
 
     
@@ -64,7 +63,9 @@ void gameLoop(Board &boardInstance){
 
                 break;
 
-                uint64_t moves = boardInstance.getLegalMoves(33);
+                
+                MoveGenerator moveGenerator(boardInstance);
+                uint64_t moves = moveGenerator.getLegalMoves(33);
                 std::cout << "Enter your move: ";
                 std::cin >> adversaryInput;
 

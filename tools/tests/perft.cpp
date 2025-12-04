@@ -2,19 +2,23 @@
 #include <map>
 
 #include "board.h"
+#include "moveGenerator.h"
 #include "perft.h"
 
 
 std::map<std::string,int> moveBreakDown = {};
 
-int maximum = 6;
+int maximum = 2;
 
 
-int perftSearch(Board &boardInstance, int maxDepth){
+
+uint64_t perftSearch(Board &boardInstance, int maxDepth){
+
+    MoveGenerator moveGenerator(boardInstance);
 
     if(maxDepth == 0) return 1;
 
-    int nodeCount = 0;
+    uint64_t nodeCount = 0;
         
     for(int i = 0; i < 12; i++){
 
@@ -34,39 +38,39 @@ int perftSearch(Board &boardInstance, int maxDepth){
 	    pieceLocations &= (pieceLocations- 1);			
 
 
-	    uint64_t normalMoves = boardInstance.getLegalMoves(pieceLoc);
-	    uint64_t promotionMoves = boardInstance.getPromotionMoves(pieceLoc);
+	    uint64_t normalMoves = moveGenerator.getLegalMoves(pieceLoc);
+	    uint64_t promotionMoves = moveGenerator.getPromotionMoves(pieceLoc);
 	
 	
-	
+
 	    while(normalMoves){
                 
-		int move = __builtin_ctzll(normalMoves);
-		normalMoves &= (normalMoves - 1);
+		    uint64_t move = __builtin_ctzll(normalMoves);
+		    normalMoves &= (normalMoves - 1);
 
-                BoardState savedState = boardInstance.state;
-                boardInstance.makeMove(pieceLoc,move,-1);
+            BoardState savedState = boardInstance.state;
+            boardInstance.makeMove(pieceLoc,move,-1);
 
-                int nodes = perftSearch(boardInstance,maxDepth-1);
-                nodeCount+=nodes;
+            uint64_t nodes = perftSearch(boardInstance,maxDepth-1);
+            nodeCount+=nodes;
 
-                boardInstance.state = savedState;
+            boardInstance.state = savedState;
 
-                if(maxDepth == maximum){
-                    std::string algebraicNotation = convertMoveToAlgebraicNotation(pieceLoc)+convertMoveToAlgebraicNotation(move);
-                    if(!moveBreakDown[algebraicNotation]) moveBreakDown[algebraicNotation] = nodes;
-                    else moveBreakDown[algebraicNotation]+=nodes;
-                }
-
+            if(maxDepth == maximum){
+                std::string algebraicNotation = convertMoveToAlgebraicNotation(pieceLoc)+convertMoveToAlgebraicNotation(move);
+                if(!moveBreakDown[algebraicNotation]) moveBreakDown[algebraicNotation] = nodes;
+                else moveBreakDown[algebraicNotation]+=nodes;
             }
+
+        }
 
 	    while (promotionMoves){
 
 
-		int move = __builtin_ctzll(promotionMoves);
+		uint64_t move = __builtin_ctzll(promotionMoves);
 		promotionMoves &= (promotionMoves - 1);
 		
-                int subNodes = 0;
+                uint64_t subNodes = 0;
 
                 for(int promotionPiece : {Rook,Bishop,Knight,Queen}){
 
@@ -76,7 +80,7 @@ int perftSearch(Board &boardInstance, int maxDepth){
                     BoardState savedState = boardInstance.state;
                     boardInstance.makeMove(pieceLoc,move,promotionPiece);
 
-                    int nodes = perftSearch(boardInstance,maxDepth-1);
+                    uint64_t nodes = perftSearch(boardInstance,maxDepth-1);
                     subNodes+=nodes;
 
                     boardInstance.state = savedState;

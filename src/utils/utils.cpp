@@ -145,3 +145,12 @@ bool pieceWrapsTheBoard(int pos1, int pos2){
     return !((columnsDifference < 2) && (rowsDifference < 2));
 }
 
+
+void updatePieceBitBoards(BoardState &state){
+
+    state.whitePieceBitBoard = state.whitePawnBitBoard | state.whiteBishopBitBoard | state.whiteKnightBitBoard | state.whiteQueenBitBoard | state.whiteKingBitBoard | state.whiteRookBitBoard;
+    state.blackPieceBitBoard = state.blackPawnBitBoard | state.blackBishopBitBoard | state.blackKnightBitBoard | state.blackQueenBitBoard | state.blackKingBitBoard | state.blackRookBitBoard;
+
+}
+
+
