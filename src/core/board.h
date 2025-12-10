@@ -5,6 +5,17 @@
 
 #include "utils/Types.h"
     
+struct SavedData {
+
+    int halfMoveClock;
+    int enPassantLoc;
+    uint8_t castlingRights;
+    Pieces capturedPiece;
+    bool enPassantCapture;
+    bool promotion;
+
+};
+
 class Board{
 
     public:
@@ -13,7 +24,7 @@ class Board{
 
         BoardState state;
         bool isAdversaryWhite;
-
+        int historyIndex;
         
         bool isAdversaryTurn();
         bool isPieceWhite(int pos);
@@ -26,17 +37,21 @@ class Board{
         uint64_t getRay(int pos1, int pos2);
 
         void makeMove(Move move);
+        void unmakeMove(Move move);
+        void unmakeRookCastle(Move move);
         void handleCapture(int from, int to, bool isWhite);
         void handleEnpassant(int from, int to, bool isWhite);
         void handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece, uint64_t &pawnBitBoard);
         void handleRookCastle(int newKingLoc);
         void updateCastlingRights(int from, bool isWhite, Pieces pieceType);
+        void saveHistory();
 
         int getPieceEnum(int pos);
         int getFirstBlocker(int pos,RaysDirection direction);
-                        
-};
+    
 
+        SavedData history[2048] = {};
+};
 
 
 

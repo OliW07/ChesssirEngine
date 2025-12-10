@@ -8,7 +8,7 @@
 
 std::map<std::string,int> moveBreakDown = {};
 
-int maximum = 4;
+int maximum = 5;
 
 
 
@@ -51,13 +51,12 @@ uint64_t perftSearch(Board &boardInstance, int maxDepth){
                     move.to = __builtin_ctzll(normalMoves);
                     normalMoves &= (normalMoves - 1);
             
-                    BoardState savedState = boardInstance.state;
                     boardInstance.makeMove(move);
 
                     uint64_t nodes = perftSearch(boardInstance,maxDepth-1);
                     nodeCount+=nodes;
 
-                    boardInstance.state = savedState;
+                    boardInstance.unmakeMove(move);
 
                     if(maxDepth == maximum){
                         std::string algebraicNotation = convertMoveToAlgebraicNotation(move);
@@ -82,13 +81,12 @@ uint64_t perftSearch(Board &boardInstance, int maxDepth){
                         move.promotionPiece = promotionPiece;
                         
                         //For each promotion piece enum Rook, Bishop, Knight & Queen
-                        BoardState savedState = boardInstance.state;
                         boardInstance.makeMove(move);
 
                         uint64_t nodes = perftSearch(boardInstance,maxDepth-1);
                         subNodes+=nodes;
 
-                        boardInstance.state = savedState;
+                        boardInstance.unmakeMove(move);
 
                     }
 

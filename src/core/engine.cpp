@@ -1,5 +1,3 @@
-#include <random>
-
 #include "moveGenerator.h"
 #include "utils/Types.h"
 #include <cmath>
@@ -20,8 +18,7 @@ Move Engine::bestMove(Board &boardInstance){
 
             
         
-        Move move;
-        move.from = pieceLoc;
+        Move move; move.from = pieceLoc;
         
         //Evaluate each legal move
         while(legalMoves)  {
@@ -32,7 +29,7 @@ Move Engine::bestMove(Board &boardInstance){
         
             boardInstance.makeMove(move);
 
-            int eval = EvaluateState(boardInstance.state);
+            int eval = EvaluateState(&boardInstance.state);
             if(eval > bestScore){
                 bestScore = eval;
                 bestMove = move;
@@ -43,39 +40,9 @@ Move Engine::bestMove(Board &boardInstance){
         }
 
         while(promotionMoves){
-            
-            move.to = __builtin_ctzll(promotionMoves);
-            promotionMoves &= (promotionMoves - 1);
 
-            for(Pieces promotionPiece : {Rook,Queen,Bishop,Knight}){
-
-                move.promotionPiece = promotionPiece;
-                
-                boardInstance.makeMove(move);
-
-                int eval = EvaluateState(boardInstance.state);
-
-                if(eval > bestScore){
-                    bestScore = eval;
-                    bestMove = move;
-                }
-
-                boardInstance.unmakeMove(move);
-            }
             
         }
     }
 
-    return bestMove;
-
-}
-
-
-int Engine::EvaluateState(BoardState &state){
-    
-    std::random_device rd; // Obtain a seed from the hardware
-    std::mt19937 gen(rd()); 
-    
-    std::uniform_int_distribution<> distrib(1, 100);
-    return distrib(gen);
 }
