@@ -8,6 +8,10 @@
 #include <map>
 #include <array>
 
+enum Pieces {Bishop,Queen,Rook,King,Pawn,Knight,None};
+enum RaysDirection {North,South,East,West,NorthEast,SouthEast,NorthWest,SouthWest};
+enum Colours {Black,White,Both};
+
 struct BoardState{
 
     uint64_t bitboards[2][6] = {0ULL};
@@ -26,9 +30,16 @@ struct BoardState{
     uint8_t castlingRights = 0;
 };
 
-enum Pieces {Bishop,Queen,Rook,King,Pawn,Knight,None};
-enum RaysDirection {North,South,East,West,NorthEast,SouthEast,NorthWest,SouthWest};
-enum Colours {Black,White,Both};
+struct Move {
+    
+    bool nullMove = false;
+
+    int to;
+    int from;
+    Pieces promotionPiece = None;
+    
+};
+
 
 
 const std::unordered_map<char,Pieces> promotionCharToPiece = {
@@ -48,6 +59,14 @@ const std::unordered_map<char,Pieces> notationToPieceMap = {
     {'p',Pawn}
 };
 
+const std::unordered_map<Pieces,char> pieceToNotation = {
+    {King,'k'},
+    {Queen,'q'},
+    {Rook,'r'},
+    {Bishop,'b'},
+    {Knight,'n'},
+    {Pawn,'p'}
+};
 
 const std::map<RaysDirection,int> Compass = {
         {North,8},
@@ -75,9 +94,9 @@ uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite);
 RaysDirection convertPositionsToDirections(int pos1, int pos2);
 
 
-std::string convertMoveToAlgebraicNotation(int pos);
+std::string convertMoveToAlgebraicNotation(Move move);
 
-std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation);
+Move convertAlgebraicNotationToMove(const std::string &notation);
 std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard);
 
 

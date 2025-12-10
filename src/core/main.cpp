@@ -54,7 +54,7 @@ void gameLoop(Board &boardInstance){
         if(boardInstance.isAdversaryTurn()){
 
                 std::string adversaryInput;
-                uint64_t perftNodes = perftSearch(boardInstance);
+/*                uint64_t perftNodes = perftSearch(boardInstance);
                 std::cout << perftNodes << "\n";
 
                 for(const auto &[move,count] : moveBreakDown){
@@ -62,7 +62,7 @@ void gameLoop(Board &boardInstance){
                 }
 
                 break;
-
+*/
                 
                 MoveGenerator moveGenerator(boardInstance);
                 uint64_t moves = moveGenerator.getLegalMoves(8);
@@ -71,16 +71,16 @@ void gameLoop(Board &boardInstance){
 
                 std::cout << "\n";
                 
-                std::vector<int> moveData = convertAlgebraicNotationToMoves(adversaryInput);
+                Move playerMove = convertAlgebraicNotationToMove(adversaryInput);
                
-                if(moveData.empty()){
+                if(playerMove.nullMove){
 
                     //Bad user input
                     std::cout << "Error! Invalid algebraic notation, please try again \n";
                     continue;
                 }
                 
-                boardInstance.makeMove(moveData[0],moveData[1],(Pieces)moveData[2]);
+                boardInstance.makeMove(playerMove);
                 visualiseGraphicBoard(boardInstance.state);
                 //Move the piece on the board
 
