@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -21,6 +22,7 @@ int convertNotationToInt(const std::string &notation){
 
 int convertLocationToRows(const int location){
     if(location < 0 || location > 63){
+std::cout << "DEBUG: convertLocationToRows called with " << location << std::endl;
         throw std::runtime_error("Location is out of range");
     }
     return location/8;
@@ -39,19 +41,19 @@ std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation){
         std::string from = notation.substr(0,2);
         std::string to = notation.substr(2,2);
 
-        int promotionType = -1;
+        Pieces promotionPiece = None;
 
         try{
 
             if(notation.length() == 5){
-                promotionType = promotionPieceCharIntConversion.at(notation[4]);
+                promotionPiece = promotionCharToPiece.at(notation[4]);
             } 
             
 
             std::vector<int> moves = {
                 convertNotationToInt(from),
                 convertNotationToInt(to),
-                promotionType
+                static_cast<int>(promotionPiece)
                 
             };
 
@@ -146,11 +148,9 @@ bool pieceWrapsTheBoard(int pos1, int pos2){
 }
 
 
-void updatePieceBitBoards(BoardState &state){
 
-    state.whitePieceBitBoard = state.whitePawnBitBoard | state.whiteBishopBitBoard | state.whiteKnightBitBoard | state.whiteQueenBitBoard | state.whiteKingBitBoard | state.whiteRookBitBoard;
-    state.blackPieceBitBoard = state.blackPawnBitBoard | state.blackBishopBitBoard | state.blackKnightBitBoard | state.blackQueenBitBoard | state.blackKingBitBoard | state.blackRookBitBoard;
+uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite){
+
+    return isWhite ? pieceEnum : pieceEnum + 8;
 
 }
-
-

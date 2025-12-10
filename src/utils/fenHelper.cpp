@@ -1,4 +1,4 @@
-
+#include <cctype>
 #include <sstream>
 
 #include "fenHelper.h"
@@ -25,32 +25,15 @@ void parseFenString(std::string fen, BoardState &state){
             uint64_t *pieceBitBoard = nullptr;
 
             bool isWhite = std::isupper(uCharacter);
+            Pieces pieceType = notationToPieceMap.at(std::tolower(uCharacter));
 
-            switch (std::tolower(uCharacter)) {
-                case 'r':
-                    pieceBitBoard = isWhite ? &state.whiteRookBitBoard : &state.blackRookBitBoard;
-                    break;
-                case 'n':
-                    pieceBitBoard = isWhite ? &state.whiteKnightBitBoard : &state.blackKnightBitBoard;
-                    break;
-                case 'b':
-                    pieceBitBoard = isWhite ? &state.whiteBishopBitBoard : &state.blackBishopBitBoard;
-                    break;
-                case 'q':
-                    pieceBitBoard = isWhite ? &state.whiteQueenBitBoard : &state.blackQueenBitBoard;
-                    break;
-                case 'k':
-                    pieceBitBoard = isWhite ? &state.whiteKingBitBoard : &state.blackKingBitBoard;
-                    break;
-                case 'p':
-                    pieceBitBoard = isWhite ? &state.whitePawnBitBoard : &state.blackPawnBitBoard;
-                    break;
-                default:
-                    throw std::runtime_error("Unknown piece character in FEN.");
-                        
-            }
+            pieceBitBoard = &state.bitboards[isWhite][pieceType];
+            uint64_t pieceMask = (1ULL << boardIndex);
 
-            *pieceBitBoard |= (1ULL << boardIndex);
+            *pieceBitBoard |= pieceMask;
+            state.occupancy[isWhite] ^= pieceMask;
+            state.occupancy[Both] ^= pieceMask;
+            state.mailBox[boardIndex] = convertPieceToBinary(pieceType,isWhite);
 
         }else if(uCharacter == '/'){
 
@@ -68,8 +51,6 @@ void parseFenString(std::string fen, BoardState &state){
             
     }
 
-    updatePieceBitBoards(state);
-        
 
     //Parse game data from the end of FEN string
 

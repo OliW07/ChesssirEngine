@@ -65,7 +65,7 @@ void gameLoop(Board &boardInstance){
 
                 
                 MoveGenerator moveGenerator(boardInstance);
-                uint64_t moves = moveGenerator.getLegalMoves(33);
+                uint64_t moves = moveGenerator.getLegalMoves(8);
                 std::cout << "Enter your move: ";
                 std::cin >> adversaryInput;
 
@@ -80,7 +80,7 @@ void gameLoop(Board &boardInstance){
                     continue;
                 }
                 
-                boardInstance.makeMove(moveData[0],moveData[1],moveData[2]);
+                boardInstance.makeMove(moveData[0],moveData[1],(Pieces)moveData[2]);
                 visualiseGraphicBoard(boardInstance.state);
                 //Move the piece on the board
 

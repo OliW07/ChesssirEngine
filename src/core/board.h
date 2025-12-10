@@ -25,14 +25,18 @@ class Board{
         uint64_t* getBitBoardFromPiece(int pieceEnum, bool isWhite);
         uint64_t getRay(int pos1, int pos2);
 
-        void makeMove(int from, int to, int promotionPieceType);
+        void makeMove(int from, int to, Pieces promotionPiece);
+        void handleCapture(int from, int to, bool isWhite);
+        void handleEnpassant(int from, int to, bool isWhite);
+        void handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece, uint64_t &pawnBitBoard);
+        void handleRookCastle(int newKingLoc);
+        void updateCastlingRights(int from, bool isWhite, Pieces pieceType);
 
         int getPieceEnum(int pos);
         int getFirstBlocker(int pos,RaysDirection direction);
                         
 };
 
-enum Pieces {Pawn,Rook,Bishop,Knight,Queen,King};
 
 
 

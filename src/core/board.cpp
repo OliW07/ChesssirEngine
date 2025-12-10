@@ -22,15 +22,15 @@ Board::Board(const std::string fen, bool isAdversaryWhite){
 
 
 uint64_t Board::getFriendlyPieces(int pos){
-    return isPieceWhite(pos) ? state.whitePieceBitBoard : state.blackPieceBitBoard;
+    return isPieceWhite(pos) ? state.occupancy[White]: state.occupancy[Black];
 }
 
 uint64_t Board::getKingLocation(bool isWhite){
-    return isWhite ? __builtin_ctzll(state.whiteKingBitBoard) : __builtin_ctzll(state.blackKingBitBoard);
+    return isWhite ? __builtin_ctzll(state.bitboards[White][King]) : __builtin_ctzll(state.bitboards[Black][King]);
 }
 
 uint64_t Board::getEnemyPieces(int pos){
-    return isPieceWhite(pos) ? state.blackPieceBitBoard : state.whitePieceBitBoard;
+    return isPieceWhite(pos) ? state.occupancy[Black]: state.occupancy[White];
 }
 
 uint64_t Board::getRay(int pos1, int pos2){
@@ -48,22 +48,22 @@ uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite){
     uint64_t *pieceBitBoard = nullptr;
     switch(pieceEnum){
         case 0:
-            pieceBitBoard = isWhite ? &state.whitePawnBitBoard : &state.blackPawnBitBoard;
+            pieceBitBoard = isWhite ? &state.bitboards[White][Bishop] : &state.bitboards[Black][Bishop];
             break;
         case 1:
-            pieceBitBoard = isWhite ? &state.whiteRookBitBoard : &state.blackRookBitBoard;
+            pieceBitBoard = isWhite ? &state.bitboards[White][Queen] : &state.bitboards[Black][Queen];
             break;
         case 2:
-            pieceBitBoard = isWhite ? &state.whiteBishopBitBoard : &state.blackBishopBitBoard;
+            pieceBitBoard = isWhite ? &state.bitboards[White][Rook] : &state.bitboards[Black][Rook];
             break;
         case 3:
-            pieceBitBoard = isWhite ? &state.whiteKnightBitBoard : &state.blackKnightBitBoard;
+            pieceBitBoard = isWhite ? &state.bitboards[White][King] : &state.bitboards[Black][King];
             break;
         case 4:
-            pieceBitBoard = isWhite ? &state.whiteQueenBitBoard : &state.blackQueenBitBoard;
+            pieceBitBoard = isWhite ? &state.bitboards[White][Pawn] : &state.bitboards[Black][Pawn];
             break;
         case 5:
-            pieceBitBoard = isWhite ? &state.whiteKingBitBoard : &state.blackKingBitBoard;
+            pieceBitBoard = isWhite ? &state.bitboards[White][Knight] : &state.bitboards[Black][Knight];
             break;
         default:
             throw std::runtime_error("Invalid piece enum");
@@ -75,35 +75,14 @@ uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite){
 
 
 int Board::getPieceEnum(int pos){
-
-    uint64_t target = (1ULL << pos);
-
-    if((state.whitePawnBitBoard & target) || (state.blackPawnBitBoard & target)){
-        return 0;
-    }
-    else if ((state.whiteRookBitBoard & target)||(state.blackRookBitBoard & target)){
-        return 1;
-    }
-    else if ((state.whiteBishopBitBoard & target)||(state.blackBishopBitBoard & target)){
-        return 2;
-    }
-    else if ((state.whiteKnightBitBoard & target)||(state.blackKnightBitBoard & target)){
-        return 3;
-    }
-    else if ((state.whiteQueenBitBoard & target)||(state.blackQueenBitBoard & target)){
-        return 4;
-    }
-    else if ((state.whiteKingBitBoard & target)||(state.blackKingBitBoard & target)){
-        return 5;
-    }else{
-        return -1;
-    }
+      //Toggle off the colour of piece, to get left with the enum
+      return state.mailBox[pos] & ~8; 
 
 }
 
 int Board::getFirstBlocker(int pos, RaysDirection direction){
     
-    uint64_t blockers = rays[direction][pos] & (state.whitePieceBitBoard | state.blackPieceBitBoard);
+    uint64_t blockers = rays[direction][pos] & (state.occupancy[White] | state.occupancy[Black]);
 
     if(!blockers) return -1; 
 
@@ -122,14 +101,14 @@ bool Board::isAdversaryTurn(){
 }
 
 bool Board::isPieceWhite(int pos){
-    return (1ULL << pos) & state.whitePieceBitBoard;
+    return (1ULL << pos) & state.occupancy[White];
 }
 
 bool Board::isSquareEmpty(int pos){
 
     uint64_t target = 1ULL << pos;
 
-    uint64_t allPieces = state.whitePieceBitBoard | state.blackPieceBitBoard;
+    uint64_t allPieces = state.occupancy[White] | state.occupancy[Black];
 
     
     return !(target & allPieces);
@@ -138,7 +117,7 @@ bool Board::isSquareEmpty(int pos){
 
 
 
-void Board::makeMove(int from, int to, int promotionPieceType){
+void Board::makeMove(int from, int to, Pieces promotionPiece){
 
     Pieces pieceType = (Pieces)getPieceEnum(from);
     bool isWhite = isPieceWhite(from);
@@ -146,45 +125,131 @@ void Board::makeMove(int from, int to, int promotionPieceType){
     uint64_t *pieceBitBoard = getBitBoardFromPiece((int)pieceType,isWhite);
 
 
-    if((1ULL << to) & (state.whitePieceBitBoard | state.blackPieceBitBoard)){
-        //Capturing a piece
-        
-        Pieces capturedPiece = (Pieces)getPieceEnum(to);
+    if((1ULL << to) & state.occupancy[Both]){
 
-        if(capturedPiece == Rook && state.castlingRights > 0){
-            switch(to){
-                case(0):
-                    state.castlingRights &= ~4;
-                    break;
-                case(7):
-                    state.castlingRights &= ~8;
-                    break;
-                case(56):
-                    state.castlingRights &= ~1;
-                    break;
-                case(63):
-                    state.castlingRights &= ~2;
-            }
-        }
-
-        uint64_t *capturedBitBoard = getBitBoardFromPiece(capturedPiece,!isWhite);
-
-        //Toggle off the captured piece
-        *capturedBitBoard ^= (1ULL << to);
-
-        state.halfMoveClock = -1;
+        handleCapture(from,to,isWhite);
     }
+
 
     else if(pieceType == Pawn && to == state.enPassantSquare && state.enPassantSquare != -1){
-        uint64_t *capturedBitBoard = getBitBoardFromPiece(Pawn,!isWhite);
-        int capturePos = isWhite ? to - 8 : to + 8;
-        *capturedBitBoard ^= (1ULL << capturePos);
-        state.halfMoveClock = -1;
+       handleEnpassant(from,to,isWhite);
     }
-    *pieceBitBoard |= (1ULL << to);
-    *pieceBitBoard ^= (1ULL << from);
+   
+    uint64_t moveMask = (1ULL << to) | (1ULL << from);
 
-    if((pieceType == Pawn)){
+    *pieceBitBoard ^= moveMask;
+
+    state.mailBox[to] = convertPieceToBinary(pieceType, isWhite);
+    state.mailBox[from] = 0;
+
+    if(pieceType == Pawn){
+
+       handlePawnMove(from,to,isWhite,promotionPiece,*pieceBitBoard);
+        
+    }else{
+        state.enPassantSquare = -1;
+    }
+
+    if((pieceType == King || pieceType == Rook) && state.castlingRights > 0){
+
+       updateCastlingRights(from, isWhite, pieceType);
+
+
+    }
+
+    //If castling, move the rook
+    
+    if(pieceType == King && (abs(convertLocationToColumns(to) - convertLocationToColumns(from)) > 1)){
+       handleRookCastle(to); 
+
+    }
+
+    state.occupancy[isWhite] ^= (1ULL << to);
+    state.occupancy[isWhite] ^= (1ULL << from);
+    state.occupancy[Both] ^= (1ULL << from);
+    state.occupancy[Both] |= (1ULL << to);
+
+    if(state.whiteToMove != state.whiteStarts) state.fullMoveClock++;
+    state.halfMoveClock++;
+
+    state.whiteToMove = !state.whiteToMove;
+    
+}
+
+void Board::handleCapture(int from, int to,bool isWhite){
+
+    //Capturing a piece
+    
+    Pieces capturedPiece = (Pieces)getPieceEnum(to);
+if(capturedPiece == King) std::cout << "DEBUG: King captured at " << to << " by move from " << from << std::endl;
+
+    if(capturedPiece == Rook && state.castlingRights > 0){
+        switch(to){
+            case(0):
+                state.castlingRights &= ~4;
+                break;
+            case(7):
+                state.castlingRights &= ~8;
+                break;
+            case(56):
+                state.castlingRights &= ~1;
+                break;
+            case(63):
+                state.castlingRights &= ~2;
+        }
+    }
+
+    uint64_t *capturedBitBoard = getBitBoardFromPiece(capturedPiece,!isWhite);
+
+    //Toggle off the captured piece
+    *capturedBitBoard ^= (1ULL << to);
+    state.occupancy[!isWhite] ^= (1ULL << to);
+    state.mailBox[to] = convertPieceToBinary(capturedPiece,isWhite);
+
+    state.halfMoveClock = -1;
+}
+
+void Board::handleEnpassant(int from, int to, bool isWhite){
+
+    uint64_t *capturedBitBoard = getBitBoardFromPiece(Pawn,!isWhite);
+    int capturePos = isWhite ? to - 8 : to + 8;
+    uint64_t captureMask = 1ULL << capturePos;
+
+
+    *capturedBitBoard ^= captureMask;
+    state.occupancy[!isWhite] ^= captureMask;
+    state.occupancy[Both] ^= captureMask;
+    state.mailBox[capturePos] = 0;
+    state.halfMoveClock = -1;
+}
+
+void Board::updateCastlingRights(int from, bool isWhite, Pieces pieceType){
+
+    if(isWhite){
+
+        if((pieceType == Rook && from == 0) || pieceType == King){
+            state.castlingRights &= ~4;
+        }
+
+        if((pieceType == Rook && from == 7) || pieceType == King){
+            state.castlingRights &= ~8;
+        }
+    }
+
+    else{
+        
+        if((pieceType == Rook && from == 63) || pieceType == King){
+            state.castlingRights &= ~2;
+        }
+
+        if((pieceType == Rook && from == 56) || pieceType == King){
+            state.castlingRights &= ~1;
+        }
+    }
+
+}
+
+void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece, uint64_t &pawnBitBoard){
 
         if(abs(convertLocationToRows(from) - convertLocationToRows(to)) == 2){
             //Set the enpassant square
@@ -196,70 +261,64 @@ void Board::makeMove(int from, int to, int promotionPieceType){
 
         if((isWhite && convertLocationToRows(to) == 7) || (!isWhite && convertLocationToRows(to) == 0)){
             //Pawn promotes
-            uint64_t *newPieceBitBoard = getBitBoardFromPiece(promotionPieceType,isWhite);
+            uint64_t *newPieceBitBoard = getBitBoardFromPiece(promotionPiece,isWhite);
             *newPieceBitBoard |= (1ULL << to);
-            *pieceBitBoard ^= (1ULL << to);
+            pawnBitBoard ^= (1ULL << to);
+            state.mailBox[to] = convertPieceToBinary(promotionPiece,isWhite);
         }   
         state.halfMoveClock = -1;
-        
-        
-    }else{
-        state.enPassantSquare = -1;
-    }
-
-    if(pieceType == King && state.castlingRights > 0){
-
-        if(isWhite){
-            state.castlingRights &= ~12;
-        }else{
-            state.castlingRights &= ~3;
-        }
-
-
-    }
-    if(pieceType == Rook && state.castlingRights > 0){
-        //Remove coresponding castling letter
-        if(isWhite && from == 0) state.castlingRights &= ~4;
-        if(isWhite && from == 7) state.castlingRights &= ~8;
-        if(!isWhite && from == 63) state.castlingRights &= ~2;
-        if(!isWhite && from == 56) state.castlingRights &= ~1;
-    }
-
-    //If castling, move the rook
-    
-    if(pieceType == King && (abs(convertLocationToColumns(to) - convertLocationToColumns(from)) > 1)){
-        
-        switch(to){
-            case(2):
-                state.whiteRookBitBoard &= ~(1ULL << 0);
-                state.whiteRookBitBoard |= (1ULL << 3);
-                break;
-            case(6):
-                state.whiteRookBitBoard &= ~(1ULL << 7);
-                state.whiteRookBitBoard |= (1ULL << 5);
-                break;
-            case(58):
-                state.blackRookBitBoard &= ~(1ULL << 56);
-                state.blackRookBitBoard |= (1ULL << 59);
-                break;
-            case(62):
-                state.blackRookBitBoard &= ~(1ULL << 63);
-                state.blackRookBitBoard |= (1ULL << 61);
-                break;
-            default:
-                std::runtime_error("Error, the king is making an illegal move");
-        }
-
-    }
-
-
-    updatePieceBitBoards(state);
-
-
-    if(state.whiteToMove != state.whiteStarts) state.fullMoveClock++;
-    state.halfMoveClock++;
-
-    state.whiteToMove = !state.whiteToMove;
-    
 }
+
+
+void Board::handleRookCastle(int newKingLoc){
+    
+    switch(newKingLoc){
+        case(2):
+            {uint64_t rookMoveMask = (1ULL << 0) | (1ULL << 3);
+            state.bitboards[White][Rook] ^= rookMoveMask;
+
+            state.occupancy[White] ^= rookMoveMask;
+            state.occupancy[Both] ^= rookMoveMask;
+            
+            state.mailBox[3] = int(Rook);
+            state.mailBox[0] = 0;}
+            break;
+        case(6):
+            {uint64_t rookMoveMask = (1ULL << 5) | (1ULL << 7);
+            state.bitboards[White][Rook] ^= rookMoveMask;
+
+            state.occupancy[White] ^= rookMoveMask;
+            state.occupancy[Both] ^= rookMoveMask;
+
+            state.mailBox[5] = int(Rook);
+            state.mailBox[7] = 0;}
+            break;
+        case(58):
+            {uint64_t rookMoveMask = (1ULL << 56) | (1ULL << 59);
+            
+            state.bitboards[Black][Rook] ^= rookMoveMask;
+            
+            state.occupancy[Black] ^= rookMoveMask;
+            state.occupancy[Both] ^= rookMoveMask;
+
+            state.mailBox[59] = int(Rook) + 8;
+            state.mailBox[56] = 0;}
+            break;
+        case(62):
+            {uint64_t rookMoveMask = (1ULL << 61) | (1ULL << 63);
+
+            state.bitboards[Black][Rook] ^= rookMoveMask;
+
+            state.occupancy[Black] ^= rookMoveMask;
+            state.occupancy[Both] ^= rookMoveMask;
+
+            state.mailBox[61] = int(Rook) + 8;
+            state.mailBox[63] = 0;}
+            break;
+            
+        default:
+            std::runtime_error("Error, the king is making an illegal move");
+    }
+}
+
 

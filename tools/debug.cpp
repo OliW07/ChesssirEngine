@@ -40,18 +40,18 @@ void visualiseGraphicBoard(BoardState state){
         
             //At each location, check all possible piece and if present add to array
 
-            bool whitePawn = state.whitePawnBitBoard & (1ULL << pos),
-                whiteBishop = state.whiteBishopBitBoard & (1ULL << pos),
-                whiteKnight = state.whiteKnightBitBoard & (1ULL << pos),
-                whiteRook = state.whiteRookBitBoard & (1ULL << pos),
-                whiteKing = state.whiteKingBitBoard & (1ULL << pos),
-                whiteQueen = state.whiteQueenBitBoard & (1ULL << pos),
-                blackPawn = state.blackPawnBitBoard & (1ULL << pos),
-                blackBishop = state.blackBishopBitBoard & (1ULL << pos),
-                blackKnight = state.blackKnightBitBoard & (1ULL << pos),
-                blackRook = state.blackRookBitBoard & (1ULL << pos),
-                blackKing = state.blackKingBitBoard & (1ULL << pos),
-                blackQueen = state.blackQueenBitBoard & (1ULL << pos);
+            bool whitePawn = state.bitboards[White][Pawn] & (1ULL << pos),
+                whiteBishop = state.bitboards[White][Bishop] & (1ULL << pos),
+                whiteKnight = state.bitboards[White][Knight] & (1ULL << pos),
+                whiteRook = state.bitboards[White][Rook] & (1ULL << pos),
+                whiteKing = state.bitboards[White][King] & (1ULL << pos),
+                whiteQueen = state.bitboards[White][Queen] & (1ULL << pos),
+                blackPawn = state.bitboards[Black][Pawn] & (1ULL << pos),
+                blackBishop = state.bitboards[Black][Bishop] & (1ULL << pos),
+                blackKnight = state.bitboards[Black][Knight] & (1ULL << pos),
+                blackRook = state.bitboards[Black][Rook] & (1ULL << pos),
+                blackKing = state.bitboards[Black][King] & (1ULL << pos),
+                blackQueen = state.bitboards[Black][Queen] & (1ULL << pos);
 
 
             if(whitePawn) temp = 'P';

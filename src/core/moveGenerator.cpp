@@ -16,7 +16,6 @@ uint64_t MoveGenerator::getPseudoLegalMoves(const int pos){
 
 if(board.isSquareEmpty(pos)) return 0ULL;
 
-uint64_t allPieces = board.state.whitePieceBitBoard | board.state.blackPieceBitBoard;
     uint64_t pseudoLegalMoves = attackHandler.getAttacks(pos);
     bool isWhite = board.isPieceWhite(pos);
     
@@ -28,12 +27,12 @@ uint64_t allPieces = board.state.whitePieceBitBoard | board.state.blackPieceBitB
         uint64_t *pawnMoves = isWhite ? &whitePawnMoves[pos] : &blackPawnMoves[pos];
     
         //Pawns can't move onto their own pieces or friendly pieces
-        pseudoLegalMoves |= (*pawnMoves & ~allPieces);
+        pseudoLegalMoves |= (*pawnMoves & ~board.state.occupancy[Both]);
 
         uint64_t oneSpaceTargetSquare = isWhite ? (1ULL << std::min(pos+8,64)) : (1ULL << std::max(pos-8,-1));
 
         //If a piece in directly infront of a pawn, it can't do two moves
-        if((oneSpaceTargetSquare & allPieces) && oneSpaceTargetSquare != 64 && oneSpaceTargetSquare != -1){
+        if((oneSpaceTargetSquare & board.state.occupancy[Both]) && oneSpaceTargetSquare != 64 && oneSpaceTargetSquare != -1){
             if(isWhite) pseudoLegalMoves &= ~(1ULL << pos+16);
             else  pseudoLegalMoves &= ~(1ULL << pos-16);
         }
@@ -177,21 +176,26 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves){
                 
 
             //If the move is diagonal and to an empty square it is enpassantenpassantVictimLoc
-            if((convertLocationToColumns(pos) - convertLocationToColumns(move) != 0) && (convertLocationToRows(pos) - convertLocationToRows(move) != 0) && !((1ULL << move) & (board.state.whitePieceBitBoard | board.state.blackPieceBitBoard))){
+            if((convertLocationToColumns(pos) - convertLocationToColumns(move) != 0) && (convertLocationToRows(pos) - convertLocationToRows(move) != 0) && !((1ULL << move) & board.state.occupancy[Both])){
                 
                 //Temporarily remove the pawn, to check if the enpassant victim is pinned
-                uint64_t *pawnBitBoard = isWhite ? &board.state.whitePawnBitBoard : &board.state.blackPawnBitBoard;
-                *pawnBitBoard ^= (1ULL << pos);
-                
-                updatePieceBitBoards(board.state);
+                uint64_t *pawnBitBoard = isWhite ? &board.state.bitboards[White][Pawn] : &board.state.bitboards[Black][Pawn];
 
+                uint64_t pawnMask = (1ULL << pos);
+
+                *pawnBitBoard ^= pawnMask;
+                board.state.occupancy[Both] ^= pawnMask;
+                board.state.occupancy[isWhite] ^= pawnMask;
+                
                 if((attackHandler.getPinnedPieces(isWhite, true) & (1ULL << enpassantVictimLoc)) && (convertLocationToRows(pos) == convertLocationToRows(kingLocation))){
                     legalMoves ^= (1ULL << move);
                 }
 
                 //Add back the pawn we removed
-                *pawnBitBoard ^= (1ULL << pos);
-                updatePieceBitBoards(board.state);
+                
+                *pawnBitBoard ^= pawnMask;
+                board.state.occupancy[Both] ^= pawnMask;
+                board.state.occupancy[isWhite] ^= pawnMask;
             }
         }
     } 

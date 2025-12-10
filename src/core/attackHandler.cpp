@@ -12,7 +12,6 @@ uint64_t AttackHandler::getAttacks(const int pos){
     uint64_t PieceAttacks = 0ULL;
     uint64_t target = 1ULL << pos;
 
-    uint64_t allPieces = board.state.whitePieceBitBoard | board.state.blackPieceBitBoard;
 
     
     if(board.isSquareEmpty(pos)) return 0ULL;
@@ -25,7 +24,7 @@ uint64_t AttackHandler::getAttacks(const int pos){
         case Pawn:
             PieceAttacks = board.isPieceWhite(pos) ? whitePawnAttacks[pos] : blackPawnAttacks[pos];
             //The pawn can only attack (diagonally) is there is an enemy piece there
-            PieceAttacks &= (board.isPieceWhite(pos) ? board.state.blackPieceBitBoard : board.state.whitePieceBitBoard);
+            PieceAttacks &= (board.isPieceWhite(pos) ? board.state.occupancy[Black] : board.state.occupancy[White]);
             break;
         case Knight:
             PieceAttacks = knightMoves[pos];
@@ -57,7 +56,7 @@ uint64_t AttackHandler::getAttacks(const int pos){
     //Find which piece it at the position
 
     uint64_t blockingRays = 0ULL;
-    uint64_t blockers = PieceAttacks & allPieces;
+    uint64_t blockers = PieceAttacks & board.state.occupancy[Both];
 
     const RaysDirection directions[8] = {North,East,South,West,NorthEast,SouthEast,SouthWest,NorthWest};
 
@@ -105,7 +104,7 @@ uint64_t AttackHandler::getAttacks(const int pos){
 uint64_t AttackHandler::getAllAttacks(bool isWhite){
 
     uint64_t attacks = 0ULL;
-    uint64_t pieceBitBoard = isWhite ? board.state.whitePieceBitBoard : board.state.blackPieceBitBoard;
+    uint64_t pieceBitBoard = isWhite ? board.state.occupancy[White] : board.state.occupancy[Black];
 
     
     while(pieceBitBoard){
@@ -125,7 +124,7 @@ uint64_t AttackHandler::getAttackers(int pos, bool attackingIsWhite){
 
     attackers |= getPawnAttackers(pos, attackingIsWhite);
 
-    attackers |= (attackingIsWhite ? (knightMoves[pos] & board.state.whiteKnightBitBoard) : (knightMoves[pos] & board.state.blackKnightBitBoard));
+    attackers |= (attackingIsWhite ? (knightMoves[pos] & board.state.bitboards[White][Knight]) : (knightMoves[pos] & board.state.bitboards[Black][Knight]));
 
     for (auto &[direction,offset] : Compass){
 
@@ -155,7 +154,7 @@ uint64_t AttackHandler::getPawnAttackers(int pos, bool attackingIsWhite){
     if(!posInBounds(pos)) return 0ULL;
 
     uint64_t attackers = 0ULL;
-    uint64_t *pieceBitBoard = attackingIsWhite ? &board.state.whitePawnBitBoard : &board.state.blackPawnBitBoard;
+    uint64_t *pieceBitBoard = &board.state.bitboards[attackingIsWhite][Pawn];
 
     int offsets[2] = {7,9};
 
@@ -180,7 +179,7 @@ uint64_t AttackHandler::getPawnAttackers(int pos, bool attackingIsWhite){
 
 uint64_t AttackHandler::pawnControlledSquare(bool controllingColourIsWhite){
 
-    uint64_t pawnBitBoard = controllingColourIsWhite ? board.state.whitePawnBitBoard : board.state.blackPawnBitBoard;
+    uint64_t pawnBitBoard = controllingColourIsWhite ? board.state.bitboards[White][Pawn] : board.state.bitboards[Black][Pawn];
     uint64_t *pawnAttacks = controllingColourIsWhite ? whitePawnAttacks : blackPawnAttacks;
     uint64_t controlledSquares = 0ULL;
     
@@ -238,11 +237,11 @@ bool AttackHandler::isSquareAttacked(int pos, bool attackingColourIsWhite){
     //return (1ULL << pos & getAllAttacks(attackingColourIsWhite));
     if (getPawnAttackers(pos, attackingColourIsWhite)) return true;
 
-    uint64_t enemyKnights = attackingColourIsWhite ? board.state.whiteKnightBitBoard : board.state.blackKnightBitBoard;
-    uint64_t enemyKing    = attackingColourIsWhite ? board.state.whiteKingBitBoard   : board.state.blackKingBitBoard;
-    uint64_t enemyRooks   = attackingColourIsWhite ? board.state.whiteRookBitBoard   : board.state.blackRookBitBoard;
-    uint64_t enemyBishops = attackingColourIsWhite ? board.state.whiteBishopBitBoard : board.state.blackBishopBitBoard;
-    uint64_t enemyQueens  = attackingColourIsWhite ? board.state.whiteQueenBitBoard  : board.state.blackQueenBitBoard;
+    uint64_t enemyKnights = attackingColourIsWhite ? board.state.bitboards[White][Knight] : board.state.bitboards[Black][Knight];
+    uint64_t enemyKing    = attackingColourIsWhite ? board.state.bitboards[White][King]   : board.state.bitboards[Black][King];
+    uint64_t enemyRooks   = attackingColourIsWhite ? board.state.bitboards[White][Rook]   : board.state.bitboards[Black][Rook];
+    uint64_t enemyBishops = attackingColourIsWhite ? board.state.bitboards[White][Bishop] : board.state.bitboards[Black][Bishop];
+    uint64_t enemyQueens  = attackingColourIsWhite ? board.state.bitboards[White][Queen]  : board.state.bitboards[Black][Queen];
 
     if(knightMoves[pos] & enemyKnights) return true;
     if(kingMoves[pos] & enemyKing) return true;
