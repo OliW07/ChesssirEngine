@@ -18,6 +18,8 @@ set(ENGINE_SOURCES
     src/core/board.cpp
     src/core/moveGenerator.cpp
     src/core/attackHandler.cpp
+    src/core/evaluate.cpp
+    src/core/engine.cpp
     src/utils/utils.cpp
     src/utils/fenHelper.cpp
     src/data/precomputeBitBoards.cpp
