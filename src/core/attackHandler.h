@@ -8,7 +8,7 @@ class AttackHandler {
 
     public:
         
-        Board board;
+        Board &board;
         AttackHandler(Board &boardInstance) : board(boardInstance) {}
 
         bool isSquareAttacked(int pos, bool attackingColourIsWhite);
