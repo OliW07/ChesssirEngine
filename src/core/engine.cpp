@@ -16,7 +16,6 @@ Move Engine::bestMove(Board &boardInstance){
         uint64_t legalMoves = moveGenerator.getLegalMoves(pieceLoc);
         uint64_t promotionMoves = moveGenerator.getPromotionMoves(pieceLoc);
 
-            
         
         Move move; move.from = pieceLoc;
         
@@ -29,7 +28,7 @@ Move Engine::bestMove(Board &boardInstance){
         
             boardInstance.makeMove(move);
 
-            int eval = EvaluateState(&boardInstance.state);
+            int eval = EvaluateState(boardInstance.state);
             if(eval > bestScore){
                 bestScore = eval;
                 bestMove = move;
@@ -40,9 +39,24 @@ Move Engine::bestMove(Board &boardInstance){
         }
 
         while(promotionMoves){
+            
+            move.to = __builtin_ctzll(promotionMoves);
 
+            promotionMoves &= (promotionMoves - 1);
+
+            for(Pieces promotionPiece : {Rook,Knight,Bishop,Queen}){
+
+                move.promotionPiece = promotionPiece;
+                boardInstance.makeMove(move);
+
+                int eval = EvaluateState(boardInstance.state);
+                if(eval > bestScore){
+                    bestScore = eval;
+                    bestMove = move;
+                }
+            }
             
         }
     }
-
+    return bestMove;
 }
