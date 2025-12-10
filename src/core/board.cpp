@@ -117,34 +117,34 @@ bool Board::isSquareEmpty(int pos){
 
 
 
-void Board::makeMove(int from, int to, Pieces promotionPiece){
+void Board::makeMove(Move move){
 
-    Pieces pieceType = (Pieces)getPieceEnum(from);
-    bool isWhite = isPieceWhite(from);
+    Pieces pieceType = (Pieces)getPieceEnum(move.from);
+    bool isWhite = isPieceWhite(move.from);
 
     uint64_t *pieceBitBoard = getBitBoardFromPiece((int)pieceType,isWhite);
 
 
-    if((1ULL << to) & state.occupancy[Both]){
+    if((1ULL << move.to) & state.occupancy[Both]){
 
-        handleCapture(from,to,isWhite);
+        handleCapture(move.from,move.to,isWhite);
     }
 
 
-    else if(pieceType == Pawn && to == state.enPassantSquare && state.enPassantSquare != -1){
-       handleEnpassant(from,to,isWhite);
+    else if(pieceType == Pawn && move.to == state.enPassantSquare && state.enPassantSquare != -1){
+       handleEnpassant(move.from,move.to,isWhite);
     }
    
-    uint64_t moveMask = (1ULL << to) | (1ULL << from);
+    uint64_t moveMask = (1ULL << move.to) | (1ULL << move.from);
 
     *pieceBitBoard ^= moveMask;
 
-    state.mailBox[to] = convertPieceToBinary(pieceType, isWhite);
-    state.mailBox[from] = 0;
+    state.mailBox[move.to] = convertPieceToBinary(pieceType, isWhite);
+    state.mailBox[move.from] = 0;
 
     if(pieceType == Pawn){
 
-       handlePawnMove(from,to,isWhite,promotionPiece,*pieceBitBoard);
+       handlePawnMove(move.from,move.to,isWhite,move.promotionPiece,*pieceBitBoard);
         
     }else{
         state.enPassantSquare = -1;
@@ -152,22 +152,22 @@ void Board::makeMove(int from, int to, Pieces promotionPiece){
 
     if((pieceType == King || pieceType == Rook) && state.castlingRights > 0){
 
-       updateCastlingRights(from, isWhite, pieceType);
+       updateCastlingRights(move.from, isWhite, pieceType);
 
 
     }
 
     //If castling, move the rook
     
-    if(pieceType == King && (abs(convertLocationToColumns(to) - convertLocationToColumns(from)) > 1)){
-       handleRookCastle(to); 
+    if(pieceType == King && (abs(convertLocationToColumns(move.to) - convertLocationToColumns(move.from)) > 1)){
+       handleRookCastle(move.to); 
 
     }
 
-    state.occupancy[isWhite] ^= (1ULL << to);
-    state.occupancy[isWhite] ^= (1ULL << from);
-    state.occupancy[Both] ^= (1ULL << from);
-    state.occupancy[Both] |= (1ULL << to);
+    state.occupancy[isWhite] ^= (1ULL << move.to);
+    state.occupancy[isWhite] ^= (1ULL << move.from);
+    state.occupancy[Both] ^= (1ULL << move.from);
+    state.occupancy[Both] |= (1ULL << move.to);
 
     if(state.whiteToMove != state.whiteStarts) state.fullMoveClock++;
     state.halfMoveClock++;

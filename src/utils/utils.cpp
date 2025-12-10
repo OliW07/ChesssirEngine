@@ -33,7 +33,7 @@ int countOnes(uint64_t state){
 }
 
 
-std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation){
+Move convertAlgebraicNotationToMove(const std::string &notation){
 
         if(notation.length() < 4 || notation.length() > 5) return {};
             
@@ -43,6 +43,8 @@ std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation){
 
         Pieces promotionPiece = None;
 
+        Move move;
+        
         try{
 
             if(notation.length() == 5){
@@ -57,11 +59,16 @@ std::vector<int> convertAlgebraicNotationToMoves(const std::string &notation){
                 
             };
 
-            return moves;
+            move.to = convertNotationToInt(to);
+            move.from = convertNotationToInt(from);
+            move.promotionPiece = promotionPiece;
+
+            return move;
 
         }catch(...){
 
-            return {};
+            move.nullMove = true;
+            return move;
         }
 
         
@@ -117,11 +124,18 @@ RaysDirection convertPositionsToDirections(int pos1, int pos2){
     return direction;
 }
 
-std::string convertMoveToAlgebraicNotation(int pos){
-    char number = convertLocationToRows(pos) + '1';
-    char letter = convertLocationToColumns(pos) + 'a';
+std::string convertMoveToAlgebraicNotation(Move move){
+    char numberTo = convertLocationToRows(move.to) + '1';
+    char letterTo = convertLocationToColumns(move.to) + 'a';
 
-    std::string result = std::string() + letter + number;
+    char numberFrom = convertLocationToRows(move.from) + '1';
+    char letterFrom = convertLocationToColumns(move.from) + 'a';
+
+    
+    std::string result = std::string() + letterFrom + numberFrom + letterTo + letterFrom;
+
+    if(move.promotionPiece != None) result += pieceToNotation.at(move.promotionPiece);
+
     return result; 
 }
 
