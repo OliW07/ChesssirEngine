@@ -9,7 +9,6 @@ class Engine {
     public:
 
         Move bestMove(Board &boardInstance);
-        int EvaluateState(BoardState &state);
 
 };
 #endif

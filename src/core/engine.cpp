@@ -2,12 +2,13 @@
 #include "utils/Types.h"
 #include <cmath>
 #include "engine.h"
+#include "evaluate.h"
 
 Move Engine::bestMove(Board &boardInstance){
     MoveGenerator moveGenerator(boardInstance);
     
     Colours activeColour = (Colours)boardInstance.state.whiteToMove;
-    int bestScore = -INFINITY;
+    int bestScore = -99999999;
     Move bestMove;
 
     for(int i = 0; i < boardInstance.state.pieceList.pieceCount[activeColour]; i++){
@@ -28,7 +29,7 @@ Move Engine::bestMove(Board &boardInstance){
         
             boardInstance.makeMove(move);
 
-            int eval = EvaluateState(boardInstance.state);
+            int eval = evaluateState(boardInstance);
             if(eval > bestScore){
                 bestScore = eval;
                 bestMove = move;
@@ -49,7 +50,7 @@ Move Engine::bestMove(Board &boardInstance){
                 move.promotionPiece = promotionPiece;
                 boardInstance.makeMove(move);
 
-                int eval = EvaluateState(boardInstance.state);
+                int eval = evaluateState(boardInstance);
                 if(eval > bestScore){
                     bestScore = eval;
                     bestMove = move;
@@ -60,3 +61,5 @@ Move Engine::bestMove(Board &boardInstance){
     }
     return bestMove;
 }
+
+
