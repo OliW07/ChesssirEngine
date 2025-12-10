@@ -142,6 +142,8 @@ void Board::makeMove(Move move){
     state.mailBox[move.to] = convertPieceToBinary(pieceType, isWhite);
     state.mailBox[move.from] = 0;
 
+    state.pieceList.movePiece(move.to,move.from,(Colours)isWhite);
+
     if(pieceType == Pawn){
 
        handlePawnMove(move.from,move.to,isWhite,move.promotionPiece,*pieceBitBoard);
@@ -205,6 +207,7 @@ if(capturedPiece == King) std::cout << "DEBUG: King captured at " << to << " by 
     *capturedBitBoard ^= (1ULL << to);
     state.occupancy[!isWhite] ^= (1ULL << to);
     state.mailBox[to] = convertPieceToBinary(capturedPiece,isWhite);
+    state.pieceList.removePiece(to,(Colours)!isWhite);
 
     state.halfMoveClock = -1;
 }
@@ -220,6 +223,7 @@ void Board::handleEnpassant(int from, int to, bool isWhite){
     state.occupancy[!isWhite] ^= captureMask;
     state.occupancy[Both] ^= captureMask;
     state.mailBox[capturePos] = 0;
+    state.pieceList.removePiece(capturePos,(Colours)!isWhite);
     state.halfMoveClock = -1;
 }
 
@@ -265,6 +269,7 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
             *newPieceBitBoard |= (1ULL << to);
             pawnBitBoard ^= (1ULL << to);
             state.mailBox[to] = convertPieceToBinary(promotionPiece,isWhite);
+            //Dont need to change piecelist as the location of the promotion piece is the same as where the pawn just moved to.
         }   
         state.halfMoveClock = -1;
 }
@@ -282,6 +287,9 @@ void Board::handleRookCastle(int newKingLoc){
             
             state.mailBox[3] = int(Rook);
             state.mailBox[0] = 0;}
+
+            state.pieceList.movePiece(3,0,White);
+
             break;
         case(6):
             {uint64_t rookMoveMask = (1ULL << 5) | (1ULL << 7);
@@ -292,6 +300,9 @@ void Board::handleRookCastle(int newKingLoc){
 
             state.mailBox[5] = int(Rook);
             state.mailBox[7] = 0;}
+
+            state.pieceList.movePiece(5,7,White);
+
             break;
         case(58):
             {uint64_t rookMoveMask = (1ULL << 56) | (1ULL << 59);
@@ -303,6 +314,9 @@ void Board::handleRookCastle(int newKingLoc){
 
             state.mailBox[59] = int(Rook) + 8;
             state.mailBox[56] = 0;}
+
+            state.pieceList.movePiece(59,56,Black);
+
             break;
         case(62):
             {uint64_t rookMoveMask = (1ULL << 61) | (1ULL << 63);
@@ -314,6 +328,9 @@ void Board::handleRookCastle(int newKingLoc){
 
             state.mailBox[61] = int(Rook) + 8;
             state.mailBox[63] = 0;}
+
+            state.pieceList.movePiece(61,63,Black);
+
             break;
             
         default:

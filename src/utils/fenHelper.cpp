@@ -34,6 +34,7 @@ void parseFenString(std::string fen, BoardState &state){
             state.occupancy[isWhite] ^= pieceMask;
             state.occupancy[Both] ^= pieceMask;
             state.mailBox[boardIndex] = convertPieceToBinary(pieceType,isWhite);
+            state.pieceList.addPiece(boardIndex, isWhite ? White : Black);
 
         }else if(uCharacter == '/'){
 

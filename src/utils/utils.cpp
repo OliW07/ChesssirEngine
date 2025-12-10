@@ -74,6 +74,34 @@ Move convertAlgebraicNotationToMove(const std::string &notation){
         
 }
 
+void PieceList::addPiece(int pos, Colours colour){
+    if(pieceCount[colour] >= 16) { std::cout << "DEBUG: Piece list overflow attempt" << std::endl; return; }
+    list[colour][pieceCount[colour]] = pos;
+    mapBoardLocToList[pos] = pieceCount[colour];
+    pieceCount[colour] ++;
+}
+
+void PieceList::removePiece(int pos, Colours colour){
+    int listIndex = mapBoardLocToList[pos];
+    
+    //Swap current index with last index, to keep O(1)
+    list[colour][listIndex] = list[colour][pieceCount[colour] - 1];
+    
+    mapBoardLocToList[list[colour][listIndex]] = listIndex;
+    
+    pieceCount[colour] --;
+
+    mapBoardLocToList[pos] = -1;
+
+}
+
+void PieceList::movePiece(int to, int from, Colours colour){
+    int listIndex = mapBoardLocToList[from];
+    list[colour][listIndex] = to;
+    mapBoardLocToList[from] = -1;
+    mapBoardLocToList[to] = listIndex;
+}
+
 std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard){
     std::vector<int> locations = {};
     while(bitBoard){
