@@ -160,7 +160,7 @@ std::string convertMoveToAlgebraicNotation(Move move){
     char letterFrom = convertLocationToColumns(move.from) + 'a';
 
     
-    std::string result = std::string() + letterFrom + numberFrom + letterTo + letterFrom;
+    std::string result = std::string() + letterFrom + numberFrom + letterTo + numberTo;
 
     if(move.promotionPiece != None) result += pieceToNotation.at(move.promotionPiece);
 
