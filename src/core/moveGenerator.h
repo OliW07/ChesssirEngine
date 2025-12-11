@@ -5,6 +5,18 @@
 #include "utils/Types.h"
 #include "board.h"
 
+struct MoveList {
+    Move moves[256];
+    int count = 0;
+
+    inline void add(const Move &move){
+
+        moves[count++] = move;
+    }
+
+    Move *begin() { return moves;};
+    Move *end() { return moves + count;};
+};
 
 class MoveGenerator {
 
@@ -23,7 +35,10 @@ class MoveGenerator {
         uint64_t getLegalMoves(const int pos);
         uint64_t getPromotionMoves(const int pos);
 
+        MoveList getAllMoves();
+
 
 };
+
 
 #endif

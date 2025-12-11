@@ -240,3 +240,43 @@ uint64_t MoveGenerator::getPromotionMoves(const int pos){
 
 }
 
+MoveList MoveGenerator::getAllMoves(){
+
+    MoveList moves;
+
+    Colours activeColour = (Colours)board.state.whiteToMove;
+
+    for(int i = 0; i < board.state.pieceList.pieceCount[activeColour]; i++){
+        
+        int pieceLoc = board.state.pieceList.list[activeColour][i];
+        uint64_t legalMoves = getLegalMoves(pieceLoc);
+        uint64_t promotionMoves = getPromotionMoves(pieceLoc);
+
+        
+        Move move;
+        move.from = pieceLoc;
+        
+        while(legalMoves)  {
+            
+            move.to = __builtin_ctzll(legalMoves);
+            legalMoves &= (legalMoves - 1);
+            moves.add(move);
+        }
+
+        while(promotionMoves){
+            
+            move.to = __builtin_ctzll(promotionMoves);
+            promotionMoves &= (promotionMoves - 1);
+
+            for(Pieces promotionPiece : {Rook,Knight,Bishop,Queen}){
+
+                move.promotionPiece = promotionPiece;
+                moves.add(move);
+            }
+            
+        }
+
+    }
+
+    return moves;
+}
