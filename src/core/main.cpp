@@ -6,9 +6,12 @@
 #include "board.h"
 #include "data/precompute.h"
 #include "debug.h"
+#include "evaluate.h"
 #include "utils/Types.h"
 #include "tests/perft.h"
 #include "moveGenerator.h"
+#include "engine.h"
+
 
 void init(Board &boardInstance);
 void gameLoop(Board &boardInstance);
@@ -48,13 +51,14 @@ void gameLoop(Board &boardInstance){
 
     std::cout << "Chess Game Starting... \n";
 
+    Engine chesssirEngine;
     while(isPlaying){
         
         
         if(boardInstance.isAdversaryTurn()){
 
                 std::string adversaryInput;
-/*                uint64_t perftNodes = perftSearch(boardInstance);
+        /*        uint64_t perftNodes = perftSearch(boardInstance);
                 std::cout << perftNodes << "\n";
 
                 for(const auto &[move,count] : moveBreakDown){
@@ -62,15 +66,21 @@ void gameLoop(Board &boardInstance){
                 }
 
                 break;
-*/
+       */
                 
-                MoveGenerator moveGenerator(boardInstance);
-                uint64_t moves = moveGenerator.getLegalMoves(8);
-                std::cout << "Enter your move: ";
+                int eval = evaluateState(boardInstance);
+                std::cout << "Evaluation of position: " ;
+                std::cout << eval << '\n';
+                std::cout << "Enter your move or type q to quit: ";
                 std::cin >> adversaryInput;
 
                 std::cout << "\n";
                 
+                if(adversaryInput == "q"){
+                    isPlaying = false;
+                    break;
+                } 
+
                 Move playerMove = convertAlgebraicNotationToMove(adversaryInput);
                
                 if(playerMove.nullMove){
@@ -84,11 +94,20 @@ void gameLoop(Board &boardInstance){
                 visualiseGraphicBoard(boardInstance.state);
                 //Move the piece on the board
 
-               break; 
 
 
         }else{
-             
+            
+            Move bestMove = chesssirEngine.bestMove(boardInstance);
+            
+            std::string notation = convertMoveToAlgebraicNotation(bestMove);
+           
+            std::cout << "Computer move: ";
+            std::cout << notation << '\n';
+
+            boardInstance.makeMove(bestMove);
+            visualiseGraphicBoard(boardInstance.state);
+
         }
         
         
