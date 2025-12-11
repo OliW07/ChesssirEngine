@@ -8,7 +8,7 @@ Move Engine::bestMove(Board &boardInstance){
     MoveGenerator moveGenerator(boardInstance);
     
     Colours activeColour = (Colours)boardInstance.state.whiteToMove;
-    int bestScore = -99999999;
+    int bestScore = activeColour ? -99999999 : 99999999;
     Move bestMove;
 
     for(int i = 0; i < boardInstance.state.pieceList.pieceCount[activeColour]; i++){
@@ -30,7 +30,7 @@ Move Engine::bestMove(Board &boardInstance){
             boardInstance.makeMove(move);
 
             int eval = evaluateState(boardInstance);
-            if(eval > bestScore){
+            if((eval > bestScore) && activeColour || (eval < bestScore) && !activeColour){
                 bestScore = eval;
                 bestMove = move;
             }
@@ -51,7 +51,7 @@ Move Engine::bestMove(Board &boardInstance){
                 boardInstance.makeMove(move);
 
                 int eval = evaluateState(boardInstance);
-                if(eval > bestScore){
+                if((eval > bestScore) && activeColour || (eval < bestScore) && !activeColour){
                     bestScore = eval;
                     bestMove = move;
                 }
