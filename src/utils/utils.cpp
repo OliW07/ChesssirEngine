@@ -175,6 +175,7 @@ int convertLocationToColumns(const int location){
 }
 
 bool onlyOnePiece(uint64_t state){
+    if(state == 0) return false;
     return (__builtin_ctzll(state) + __builtin_clzll(state) == 63);
 }
 
