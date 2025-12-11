@@ -8,7 +8,8 @@
 class Engine {
     public:
 
-        Move bestMove(Board &boardInstance);
+        Move bestMove(Board &boardInstance, int maxDepth);
+        int miniMax(Board &boardInstance, int maxDepth);
 
 };
 #endif
