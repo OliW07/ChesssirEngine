@@ -6,6 +6,8 @@
 
 #include "utils/Types.h"
 
+class Board;
+
 extern int maximum;
 
 uint64_t perftSearch(Board &boardInstance, int maxDepth = maximum);
