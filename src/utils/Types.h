@@ -12,6 +12,8 @@ enum Pieces {Bishop,Queen,Rook,King,Pawn,Knight,None};
 enum RaysDirection {North,South,East,West,NorthEast,SouthEast,NorthWest,SouthWest};
 enum Colours {Black,White,Both};
 
+const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 class PieceList {
     public:
         int list[2][16];
@@ -63,7 +65,16 @@ struct Move {
     
 };
 
-
+struct SearchInfo {
+    int wtime = -1;
+    int btime = -1;
+    int winc = 0;
+    int binc = 0;
+    int movestogo = -1;
+    int depth = -1;
+    int movetime = -1;
+    bool infinite = false;
+};
 
 const std::unordered_map<char,Pieces> promotionCharToPiece = {
     {'q',Queen},

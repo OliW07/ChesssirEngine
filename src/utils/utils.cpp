@@ -22,7 +22,6 @@ int convertNotationToInt(const std::string &notation){
 
 int convertLocationToRows(const int location){
     if(location < 0 || location > 63){
-std::cout << "DEBUG: convertLocationToRows called with " << location << std::endl;
         throw std::runtime_error("Location is out of range");
     }
     return location/8;

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "utils/Types.h"
+#include "moveGenerator.h"
     
 struct SavedData {
 
@@ -16,15 +17,14 @@ struct SavedData {
 
 };
 
+
 class Board{
 
     public:
-
-        Board(const std::string fen, bool isAdversaryWhite);
-
+    
         BoardState state;
         bool isAdversaryWhite;
-        int historyIndex;
+        int historyIndex = 0;
         
         bool isAdversaryTurn();
         bool isPieceWhite(int pos);
@@ -54,6 +54,13 @@ class Board{
 };
 
 
+struct Game {
+
+    Board board;
+    SearchInfo info;
+
+    void setPosition(std::string fen, MoveList moves);
+};
 
 
 #endif

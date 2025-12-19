@@ -2,7 +2,8 @@
 #define ATTACKHANDLER_H
 
 #include "utils/Types.h"
-#include "board.h"
+
+class Board;
 
 class AttackHandler {
 

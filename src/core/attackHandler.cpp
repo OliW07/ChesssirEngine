@@ -4,6 +4,9 @@
 #include "utils/Types.h"
 #include "attackHandler.h"
 #include "precompute.h"
+#include "board.h"
+
+
 using namespace precomputedData;
 
 

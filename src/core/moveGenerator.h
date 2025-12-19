@@ -2,16 +2,17 @@
 #define MOVEGEN_H
 
 #include "attackHandler.h"
-#include "utils/Types.h"
-#include "board.h"
+
+class Board;
 
 struct MoveList {
     Move moves[256];
     int count = 0;
 
     inline void add(const Move &move){
-
-        moves[count++] = move;
+        if(count < 256){
+            moves[count++] = move;
+        }
     }
 
     Move *begin() { return moves;};

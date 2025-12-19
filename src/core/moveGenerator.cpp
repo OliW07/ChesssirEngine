@@ -29,12 +29,19 @@ if(board.isSquareEmpty(pos)) return 0ULL;
         //Pawns can't move onto their own pieces or friendly pieces
         pseudoLegalMoves |= (*pawnMoves & ~board.state.occupancy[Both]);
 
-        uint64_t oneSpaceTargetSquare = isWhite ? (1ULL << std::min(pos+8,64)) : (1ULL << std::max(pos-8,-1));
+        int oneStepIndex = isWhite ? pos + 8 : pos - 8;
 
-        //If a piece in directly infront of a pawn, it can't do two moves
-        if((oneSpaceTargetSquare & board.state.occupancy[Both]) && oneSpaceTargetSquare != 64 && oneSpaceTargetSquare != -1){
-            if(isWhite) pseudoLegalMoves &= ~(1ULL << pos+16);
-            else  pseudoLegalMoves &= ~(1ULL << pos-16);
+        //Check if the single push is blocked, if so, the double push is also blocked
+        if(oneStepIndex >= 0 && oneStepIndex < 64){
+            
+            if((1ULL << oneStepIndex) & board.state.occupancy[Both]){
+                
+                int twoStepIndex = isWhite ? pos + 16 : pos - 16;
+                if(twoStepIndex >= 0 && twoStepIndex < 64){
+                     pseudoLegalMoves &= ~(1ULL << twoStepIndex);
+                }
+               
+            }
         }
     }
 

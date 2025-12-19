@@ -15,11 +15,6 @@
 
 using namespace precomputedData;
 
-Board::Board(const std::string fen, bool isAdversaryWhite){
-    this->isAdversaryWhite = isAdversaryWhite;
-    parseFenString(fen,state);
-    historyIndex = 0;
-}
 
 
 uint64_t Board::getFriendlyPieces(int pos){
@@ -91,6 +86,16 @@ int Board::getFirstBlocker(int pos, RaysDirection direction){
          
     return 63 - __builtin_clzll(blockers);
     
+}
+
+void Game::setPosition(std::string fen,MoveList moves){
+    parseFenString(fen,board.state);
+
+    board.isAdversaryWhite = !board.state.whiteToMove;
+
+    for(auto &move : moves){
+        board.makeMove(move);
+    }
 }
 
 
