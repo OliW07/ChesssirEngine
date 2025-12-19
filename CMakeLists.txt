@@ -22,6 +22,7 @@ set(ENGINE_SOURCES
     src/core/engine.cpp
     src/utils/utils.cpp
     src/utils/fenHelper.cpp
+    src/utils/uci.cpp
     src/data/precomputeBitBoards.cpp
     tools/debug.cpp
     tools/tests/perft.cpp
