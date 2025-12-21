@@ -7,10 +7,11 @@
 #include "utils/Types.h"
 
 class Board;
+class Game;
 
 extern int maximum;
 
-uint64_t perftSearch(Board &boardInstance, int maxDepth = maximum);
+uint64_t perftSearch(Game &game, int maxDepth = maximum);
 extern std::map<std::string,int> moveBreakDown;
 
 

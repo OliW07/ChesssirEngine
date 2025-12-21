@@ -4,6 +4,7 @@
 #include "attackHandler.h"
 
 class Board;
+class Game;
 
 struct MoveList {
     Move moves[256];
@@ -21,13 +22,13 @@ struct MoveList {
 
 class MoveGenerator {
 
-    public:
-       
-        
-        Board &board;
-        AttackHandler attackHandler;
 
-        MoveGenerator(Board &boardInstance) : board(boardInstance), attackHandler(boardInstance){
+    private:
+        
+        Game &game;
+    public:
+
+        MoveGenerator(Game &gameParam) : game(gameParam){
             
         }
             

@@ -4,16 +4,21 @@
 #include "utils/Types.h"
 
 class Board;
+class Game;
 
 class AttackHandler {
 
+    private:
+
+        Game &game;
+        
     public:
         
-        Board &board;
-        AttackHandler(Board &boardInstance) : board(boardInstance) {}
+        AttackHandler(Game &gameParam) : game(gameParam){};
 
         bool isSquareAttacked(int pos, bool attackingColourIsWhite);
-        
+        bool isCheck(Colours kingColour);
+
         uint64_t getAllAttacks(bool isWhite);
         uint64_t getAttacks(const int pos);
         uint64_t getPawnAttackers(int pos, bool attackingIsWhite);

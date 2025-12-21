@@ -8,9 +8,9 @@
 #include "moveGenerator.h"
 #include "engine.h" 
 
-void readLoop(Game game){
+void readLoop(){
     std::string line, command;
-    Engine chesssir;
+    Game game;
 
     std::thread searchThread;
 
@@ -66,7 +66,7 @@ void readLoop(Game game){
         else if (command == "go") {
             std::string token;
 
-            chesssir.stopRequested = false;
+            game.chesssir.stopRequested = false;
 
             while (ss >> token) {
                 if (token == "wtime") ss >> game.info.wtime;
@@ -80,16 +80,16 @@ void readLoop(Game game){
             }
                     
             if(searchThread.joinable()) searchThread.join();
-                searchThread = std::thread(&Engine::search,&chesssir,game);
+                searchThread = std::thread(&Engine::search,&game.chesssir);
             
         } 
         else if (command == "stop") {
-            chesssir.stopRequested = true; 
+            game.chesssir.stopRequested = true; 
             if(searchThread.joinable()) searchThread.join();
 
         } 
         else if (command == "quit") {
-            chesssir.stopRequested = true;
+            game.chesssir.stopRequested = true;
             if(searchThread.joinable()) searchThread.join();
             break;
         }

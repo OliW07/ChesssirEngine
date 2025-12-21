@@ -1,33 +1,31 @@
 #include <chrono>
 #include <iostream>
+#include <cmath>
+#include <cstdlib>
 
 #include "moveGenerator.h"
 #include "utils/Types.h"
-#include <cmath>
-#include <cstdlib>
 #include "engine.h"
 #include "evaluate.h"
 
-void Engine::search(Game game){
+void Engine::search(){
 
     startTime = std::chrono::steady_clock::now();
     game.board.isAdversaryWhite = !game.board.state.whiteToMove;
     
-    setTimeToThink(game);
+    setTimeToThink();
 
-    MoveGenerator moveGenerator(game.board);
     
     Colours activeColour = (Colours)game.board.state.whiteToMove;
 
-    Move bestMove;
+    Move bestMove = {};
     Move bestMoveThisIteration;
 
     int depth = 1;
 
-    MoveList moves = moveGenerator.getAllMoves();
+    MoveList moves = game.moveGenerator.getAllMoves();
     
-    // Fix: Respect depth limit if provided
-    while(!abortSearch(game) && (game.info.depth == -1 || depth <= game.info.depth)){
+    while(!abortSearch() && (game.info.depth == -1 || depth <= game.info.depth)){
         
 
         int bestScore = activeColour ? -2000000000 : 2000000000;
@@ -38,9 +36,12 @@ void Engine::search(Game game){
         for(auto &move : moves){
            
             game.board.makeMove(move);
-            int eval = miniMax(game,depth,alpha,beta);
+            int eval = miniMax(depth,alpha,beta);
 
-            if(abortSearch(game)) break;
+            if(abortSearch()){
+                game.board.unmakeMove(move);
+                break;
+            }
             game.board.unmakeMove(move);
 
             bool isBetter = activeColour ? (eval > bestScore) : (eval < bestScore);
@@ -66,26 +67,25 @@ void Engine::search(Game game){
     std::cout << "bestmove " << convertMoveToAlgebraicNotation(bestMove) << std::endl;
 
 }
-int Engine::miniMax(Game &game, int maxDepth, int alpha, int beta){
+int Engine::miniMax(int maxDepth, int alpha, int beta){
     
    nodesVisited++;
 
-    if((nodesVisited & 2048) == 0 && abortSearch(game)) return 0; //Discard value later
+    if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
         
 
     if(maxDepth == 0) return evaluateState(game.board);
 
-    MoveGenerator moveGenerator(game.board);
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = activeColour ? -99999999 : 99999999;
     
 
  
-    MoveList moves = moveGenerator.getAllMoves();
+    MoveList moves = game.moveGenerator.getAllMoves();
 
     if(moves.count == 0){
 
-        if(moveGenerator.attackHandler.isSquareAttacked(
+        if(game.attackHandler.isSquareAttacked(
                 game.board.getKingLocation(activeColour), !activeColour)){
             //Checkmate
             return activeColour ? (-99999999 - maxDepth) : (99999999 + maxDepth);
@@ -98,7 +98,7 @@ int Engine::miniMax(Game &game, int maxDepth, int alpha, int beta){
        
         game.board.makeMove(move);
 
-        int eval = miniMax(game,maxDepth-1,alpha,beta);
+        int eval = miniMax(maxDepth-1,alpha,beta);
 
         game.board.unmakeMove(move);
 
@@ -119,7 +119,7 @@ int Engine::miniMax(Game &game, int maxDepth, int alpha, int beta){
 }
 
 
-bool Engine::abortSearch(Game &game){
+bool Engine::abortSearch(){
      
     if(stopRequested) return true;
 
@@ -131,7 +131,7 @@ bool Engine::abortSearch(Game &game){
     return false;
 }
 
-void Engine::setTimeToThink(Game &game){
+void Engine::setTimeToThink(){
 
     //Check if we have used our quota of time for this search
     

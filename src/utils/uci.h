@@ -3,6 +3,6 @@
 
 #include "board.h"
 
-void readLoop(Game game);
+void readLoop();
 
 #endif

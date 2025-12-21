@@ -5,22 +5,26 @@
 #include <atomic>
 
 #include "utils/Types.h"
-#include "board.h"
 
+class Game;
 
 class Engine {
+    private:
+
+        Game &game;
     public:
 
+        Engine(Game &gameParam) : game(gameParam) {};
 
         long long nodesVisited = 0;
         int timeToThink;
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         std::atomic<bool> stopRequested = false;
 
-        void search(Game game); //Copy of game to ensure 
-        void setTimeToThink(Game &game);
-        bool abortSearch(Game &game);
-        int miniMax(Game &game, int maxDepth, int alpha, int beta);
+        void search();
+        void setTimeToThink();
+        bool abortSearch();
+        int miniMax(int maxDepth, int alpha, int beta);
 
 };
 #endif
