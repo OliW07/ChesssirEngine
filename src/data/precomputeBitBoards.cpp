@@ -44,7 +44,6 @@ void computeSlidingRays(const int pos);
 
 void precomputeBitBoardMoves(){
 
-    std::cout << "Precomputing move data.. \n";
     
     for(int i = 0; i < 64; i++){
         
@@ -61,7 +60,6 @@ void precomputeBitBoardMoves(){
         
     }
     
-    std::cout << "Successfully precomputed bit board data \n";
 }
 
 void computeKnightMoves(const int pos){
