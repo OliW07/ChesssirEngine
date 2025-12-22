@@ -72,7 +72,10 @@ class Game {
         SearchInfo info;
 
         void setPosition(std::string fen, MoveList moves);
-        bool isCheckMate();
+        bool isDraw();
+        bool isThreeFoldRepition();
+        bool isInsufficientMaterial();
+        bool isFiftyMoveLimit();
 };
 
 
