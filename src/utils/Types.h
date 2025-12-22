@@ -36,7 +36,7 @@ class PieceList {
 
 struct BoardState{
 
-    uint64_t bitboards[2][6] = {0ULL};
+    uint64_t bitboards[3][6] = {0ULL};
     uint64_t occupancy[3] = {0ULL};
     
     bool whiteToMove = 0;
@@ -127,6 +127,8 @@ uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite);
 
 RaysDirection convertPositionsToDirections(int pos1, int pos2);
 
+
+Colours getSquareColour(int pos);
 
 std::string convertMoveToAlgebraicNotation(Move move);
 

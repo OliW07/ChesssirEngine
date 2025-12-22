@@ -73,6 +73,21 @@ Move convertAlgebraicNotationToMove(const std::string &notation){
         
 }
 
+Colours getSquareColour(int pos){
+    int rows = convertLocationToRows(pos);
+    int columns = convertLocationToColumns(pos);
+
+    if(rows % 2 == 0){
+
+        if(columns % 2 == 0) return White;
+        return Black;
+    }
+
+    if(columns % 2 == 0) return Black;
+
+    return White;
+}
+
 void PieceList::addPiece(int pos, Colours colour){
     if(pieceCount[colour] >= 16) { std::cout << "DEBUG: Piece list overflow attempt" << std::endl; return; }
     list[colour][pieceCount[colour]] = pos;
