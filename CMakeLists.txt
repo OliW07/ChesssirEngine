@@ -6,6 +6,9 @@ project(ChessEngine CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Force DWARF 4 and disable optimizations for Debug builds to fix LLDB compatibility
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -gdwarf-4")
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo) 
 endif()
@@ -53,7 +56,11 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(unit_tests tools/tests/perftTest.cpp)
+add_executable(
+    unit_tests 
+    tools/tests/perftTest.cpp
+    tools/tests/searchTest.cpp
+)
 target_link_libraries(unit_tests PRIVATE core gtest_main)
 
 include(GoogleTest)
