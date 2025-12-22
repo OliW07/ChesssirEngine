@@ -18,7 +18,6 @@ using namespace precomputedData;
 
 void Board::init(){
 
-    std::cout << "Initialising engine... \n";
     precomputeBitBoardMoves();
 }
 
