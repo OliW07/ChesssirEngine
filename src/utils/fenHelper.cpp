@@ -33,6 +33,7 @@ void parseFenString(std::string fen, BoardState &state){
             *pieceBitBoard |= pieceMask;
             state.occupancy[isWhite] ^= pieceMask;
             state.occupancy[Both] ^= pieceMask;
+            state.bitboards[Both][pieceType] ^= pieceMask;
             state.mailBox[boardIndex] = convertPieceToBinary(pieceType,isWhite);
             state.pieceList.addPiece(boardIndex, isWhite ? White : Black);
 
