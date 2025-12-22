@@ -80,7 +80,7 @@ void readLoop(){
             }
                     
             if(searchThread.joinable()) searchThread.join();
-                searchThread = std::thread(&Engine::search,&game.chesssir);
+            searchThread = std::thread(&Engine::writeBestMove,&game.chesssir);
             
         } 
         else if (command == "stop") {

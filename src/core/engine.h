@@ -21,7 +21,8 @@ class Engine {
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         std::atomic<bool> stopRequested = false;
 
-        void search();
+        Move search();
+        void writeBestMove();
         void setTimeToThink();
         bool abortSearch();
         int miniMax(int maxDepth, int alpha, int beta);

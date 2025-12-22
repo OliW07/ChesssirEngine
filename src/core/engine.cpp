@@ -8,7 +8,7 @@
 #include "engine.h"
 #include "evaluate.h"
 
-void Engine::search(){
+Move Engine::search(){
 
     startTime = std::chrono::steady_clock::now();
     game.board.isAdversaryWhite = !game.board.state.whiteToMove;
@@ -18,7 +18,7 @@ void Engine::search(){
     
     Colours activeColour = (Colours)game.board.state.whiteToMove;
 
-    Move bestMove = {};
+    Move bestMove = {} ;
     Move bestMoveThisIteration;
 
     int depth = 1;
@@ -64,9 +64,14 @@ void Engine::search(){
 
     }
 
-    std::cout << "bestmove " << convertMoveToAlgebraicNotation(bestMove) << std::endl;
-
+    return bestMove;
 }
+
+void Engine::writeBestMove(){
+    Move bestMove = search();
+    std::cout << "bestmove " << convertMoveToAlgebraicNotation(bestMove) << std::endl;
+}
+
 int Engine::miniMax(int maxDepth, int alpha, int beta){
     
    nodesVisited++;

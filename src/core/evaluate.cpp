@@ -5,7 +5,7 @@
 
 int evaluateState(Board &boardInstance){
     
-    
+
     int eval = 0;
     
     for(int i = 0; i < boardInstance.state.pieceList.pieceCount[White]; i++){
