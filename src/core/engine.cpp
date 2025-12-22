@@ -7,6 +7,7 @@
 #include "utils/Types.h"
 #include "engine.h"
 #include "evaluate.h"
+#include "board.h"
 
 Move Engine::search(){
 
@@ -98,6 +99,9 @@ int Engine::miniMax(int maxDepth, int alpha, int beta){
         //Stalemate
         return 0;
     }
+
+    //Check for special draws
+    if(game.isDraw()) return 0;
 
     for(auto &move : moves){
        
