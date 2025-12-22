@@ -16,6 +16,7 @@ endif()
 set(ENGINE_LIB_SOURCES
     src/core/board.cpp
     src/core/moveGenerator.cpp
+    src/core/moveHandler.cpp
     src/core/attackHandler.cpp
     src/core/evaluate.cpp
     src/core/engine.cpp
@@ -24,7 +25,8 @@ set(ENGINE_LIB_SOURCES
     src/utils/uci.cpp
     src/data/precomputeBitBoards.cpp
     tools/debug.cpp
-    tools/tests/perft.cpp
+    tools/perft.cpp
+    tools/perft.h
 )
 
 add_library(core ${ENGINE_LIB_SOURCES})
@@ -60,6 +62,7 @@ add_executable(
     unit_tests 
     tools/tests/perftTest.cpp
     tools/tests/searchTest.cpp
+    tools/tests/drawTest.cpp
 )
 target_link_libraries(unit_tests PRIVATE core gtest_main)
 
