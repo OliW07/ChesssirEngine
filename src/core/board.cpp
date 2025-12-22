@@ -16,6 +16,11 @@
 using namespace precomputedData;
 
 
+void Board::init(){
+
+    std::cout << "Initialising engine... \n";
+    precomputeBitBoardMoves();
+}
 
 uint64_t Board::getFriendlyPieces(int pos){
     return isPieceWhite(pos) ? state.occupancy[White]: state.occupancy[Black];
