@@ -24,6 +24,7 @@ set(ENGINE_LIB_SOURCES
     src/utils/fenHelper.cpp
     src/utils/uci.cpp
     src/data/precomputeBitBoards.cpp
+    src/data/zobrist.cpp
     tools/debug.cpp
     tools/perft.cpp
     tools/perft.h
@@ -63,6 +64,7 @@ add_executable(
     tools/tests/perftTest.cpp
     tools/tests/searchTest.cpp
     tools/tests/drawTest.cpp
+    tools/tests/zobristTest.cpp
 )
 target_link_libraries(unit_tests PRIVATE core gtest_main)
 

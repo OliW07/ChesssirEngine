@@ -45,6 +45,8 @@ struct BoardState{
     int halfMoveClock = 0;
     int fullMoveClock = 0;
 
+    uint64_t zhash = 0ULL;
+
     //least three significant bits represent the pieceType enum 0-5 for each piece, the 4th represents colour, white = 0
     std::array<uint8_t,64> mailBox = {}; 
 

@@ -1,7 +1,10 @@
 #include "Types.h"
 #include "board.h"
+#include "zobrist.h"
 #include <cstdint>
 #include <iostream>
+
+extern ZobristKeys Zobrist;
 
 void Board::makeMove(Move move){
 
@@ -11,7 +14,10 @@ void Board::makeMove(Move move){
     history[historyIndex].capturedPiece = None;
     history[historyIndex].enPassantCapture = false;
     history[historyIndex].promotion = false;
-    
+
+    state.zhash ^= Zobrist.sideKey;
+    if(state.enPassantSquare != -1) state.zhash ^= Zobrist.enPassantKeys[convertLocationToColumns(state.enPassantSquare)];
+
     Pieces pieceType = (Pieces)getPieceEnum(move.from);
     bool isWhite = isPieceWhite(move.from);
 
@@ -37,6 +43,10 @@ void Board::makeMove(Move move){
     state.mailBox[move.from] = 0;
 
     state.pieceList.movePiece(move.to,move.from,(Colours)isWhite);
+
+    state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.to];
+    state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.from];
+
 
     if(pieceType == Pawn){
 
@@ -78,6 +88,7 @@ void Board::makeMove(Move move){
 void Board::unmakeMove(Move move){
 
     state.whiteToMove = !state.whiteToMove;
+    state.zhash ^= Zobrist.sideKey;
 
     historyIndex--;
 
@@ -102,12 +113,26 @@ void Board::unmakeMove(Move move){
         *promotedPieceBitBoard ^= newPieceMask;
         state.bitboards[Both][promotionType] ^= newPieceMask;
         state.bitboards[Both][Pawn] ^= newPieceMask;
+        state.zhash ^= Zobrist.pieceKeys[isWhite][Pawn][move.to];
+        state.zhash ^= Zobrist.pieceKeys[isWhite][promotionType][move.to];
         
     }
-    
+    //XOR old hash data out
+    if(state.enPassantSquare != -1){
+        state.zhash ^= Zobrist.enPassantKeys[convertLocationToColumns(state.enPassantSquare)];
+    }
+    state.zhash ^= Zobrist.castlingKeys[state.castlingRights];
+
     state.castlingRights = restored.castlingRights;
     state.enPassantSquare = restored.enPassantLoc;
     state.halfMoveClock = restored.halfMoveClock;
+
+    //XOR new hash data in
+    state.zhash ^= Zobrist.castlingKeys[restored.castlingRights];
+    if(restored.enPassantLoc != -1){
+
+        state.zhash ^= Zobrist.enPassantKeys[convertLocationToColumns(restored.enPassantLoc)];
+    }
     
     if(pieceType == King && (abs(convertLocationToColumns(move.to) - convertLocationToColumns(move.from)) > 1)){
         unmakeRookCastle(move);
@@ -127,6 +152,9 @@ void Board::unmakeMove(Move move){
     state.occupancy[isWhite] ^= moveMask;
     state.occupancy[Both] ^= moveMask;
 
+    state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.to];
+    state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.from];
+
     if(restored.enPassantCapture){
         int capturedPawnPos = isWhite ? move.to - 8 : move.to + 8;
 
@@ -139,6 +167,7 @@ void Board::unmakeMove(Move move){
         state.occupancy[Both] ^= pawnMask;
 
         state.bitboards[Both][Pawn] ^= pawnMask;
+        state.zhash ^= Zobrist.pieceKeys[!isWhite][Pawn][capturedPawnPos];
         
         state.mailBox[capturedPawnPos] = convertPieceToBinary(Pawn, !isWhite);
         state.pieceList.addPiece(capturedPawnPos, (Colours)!isWhite);
@@ -153,6 +182,7 @@ void Board::unmakeMove(Move move){
         state.occupancy[Both] ^= capturedMask;
 
         state.bitboards[Both][restored.capturedPiece] ^= capturedMask;
+        state.zhash ^= Zobrist.pieceKeys[!isWhite][restored.capturedPiece][move.to];
 
         state.mailBox[move.to] = convertPieceToBinary(restored.capturedPiece, !isWhite);
         state.pieceList.addPiece(move.to, (Colours)!isWhite);
@@ -168,10 +198,12 @@ void Board::handleCapture(int from, int to,bool isWhite){
     //Capturing a piece
     
     Pieces capturedPiece = (Pieces)getPieceEnum(to);
-if(capturedPiece == King) std::cout << "DEBUG: King captured at " << to << " by move from " << from << std::endl;
 
     if(capturedPiece == Rook && state.castlingRights > 0){
-        switch(to){
+
+        //XOR the old castlingRights
+        state.zhash ^= Zobrist.castlingKeys[state.castlingRights];
+switch(to){
             case(0):
                 state.castlingRights &= ~4;
                 break;
@@ -184,6 +216,10 @@ if(capturedPiece == King) std::cout << "DEBUG: King captured at " << to << " by 
             case(63):
                 state.castlingRights &= ~2;
         }
+
+
+        //XOR the new castlingRights
+        state.zhash ^= Zobrist.castlingKeys[state.castlingRights];
     }
 
     uint64_t *capturedBitBoard = getBitBoardFromPiece(capturedPiece,!isWhite);
@@ -196,6 +232,8 @@ if(capturedPiece == King) std::cout << "DEBUG: King captured at " << to << " by 
     state.pieceList.removePiece(to,(Colours)!isWhite);
 
     state.bitboards[Both][capturedPiece] ^= capturedMask;
+
+    state.zhash ^= Zobrist.pieceKeys[!isWhite][capturedPiece][to];
 
     state.halfMoveClock = -1;
 
@@ -214,6 +252,7 @@ void Board::handleEnpassant(int from, int to, bool isWhite){
     state.occupancy[Both] ^= captureMask;
     state.bitboards[Both][Pawn] ^= captureMask;
     state.mailBox[capturePos] = 0;
+    state.zhash ^= Zobrist.pieceKeys[!isWhite][Pawn][capturePos];
     state.pieceList.removePiece(capturePos,(Colours)!isWhite);
     state.halfMoveClock = -1;
     history[historyIndex].capturedPiece = Pawn;
@@ -222,26 +261,39 @@ void Board::handleEnpassant(int from, int to, bool isWhite){
 
 void Board::updateCastlingRights(int from, bool isWhite, Pieces pieceType){
 
+    uint8_t oldRights = state.castlingRights;
+    bool changedRights = false;
+
     if(isWhite){
 
         if((pieceType == Rook && from == 0) || pieceType == King){
             state.castlingRights &= ~4;
+            changedRights = true;
         }
 
         if((pieceType == Rook && from == 7) || pieceType == King){
             state.castlingRights &= ~8;
+            changedRights = true;
         }
+
+
     }
 
     else{
         
         if((pieceType == Rook && from == 63) || pieceType == King){
             state.castlingRights &= ~2;
+            changedRights = true;
         }
 
         if((pieceType == Rook && from == 56) || pieceType == King){
             state.castlingRights &= ~1;
+            changedRights = true;
         }
+    }
+
+    if(changedRights){
+        state.zhash ^= (Zobrist.castlingKeys[oldRights] ^ Zobrist.castlingKeys[state.castlingRights]);
     }
 
 }
@@ -251,6 +303,7 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
         if(abs(convertLocationToRows(from) - convertLocationToRows(to)) == 2){
             //Set the enpassant square
             state.enPassantSquare = isWhite ? from+8 : from-8;
+            state.zhash ^= Zobrist.enPassantKeys[convertLocationToColumns(state.enPassantSquare)];
             
         }else{
             state.enPassantSquare = -1;
@@ -265,6 +318,10 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
             state.bitboards[Both][promotionPiece] ^= newPieceMask;
             state.bitboards[Both][Pawn] ^= newPieceMask; 
             state.mailBox[to] = convertPieceToBinary(promotionPiece,isWhite);
+            //Toggle on promotion piece hash, toggle off pawn hash, as the makeMove will toggle it on later, so this cancels out and ensures no pawn remains on the backrank.
+            state.zhash ^= Zobrist.pieceKeys[isWhite][promotionPiece][to];
+            state.zhash ^= Zobrist.pieceKeys[isWhite][Pawn][to]; 
+
             //Dont need to change piecelist as the location of the promotion piece is the same as where the pawn just moved to.
             
             history[historyIndex].promotion = true;
@@ -287,6 +344,8 @@ void Board::handleRookCastle(int newKingLoc){
             state.mailBox[3] = int(Rook);
             state.mailBox[0] = 0;}
 
+            state.zhash ^= (Zobrist.pieceKeys[White][Rook][0] ^ Zobrist.pieceKeys[White][Rook][3]);
+
             state.pieceList.movePiece(3,0,White);
 
             break;
@@ -300,6 +359,8 @@ void Board::handleRookCastle(int newKingLoc){
 
             state.mailBox[5] = int(Rook);
             state.mailBox[7] = 0;}
+
+            state.zhash ^= (Zobrist.pieceKeys[White][Rook][5] ^ Zobrist.pieceKeys[White][Rook][7]);
 
             state.pieceList.movePiece(5,7,White);
 
@@ -316,6 +377,8 @@ void Board::handleRookCastle(int newKingLoc){
             state.mailBox[59] = int(Rook) + 8;
             state.mailBox[56] = 0;}
 
+            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][56] ^ Zobrist.pieceKeys[Black][Rook][59]);
+
             state.pieceList.movePiece(59,56,Black);
 
             break;
@@ -330,6 +393,8 @@ void Board::handleRookCastle(int newKingLoc){
 
             state.mailBox[61] = int(Rook) + 8;
             state.mailBox[63] = 0;}
+
+            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][61] ^ Zobrist.pieceKeys[Black][Rook][63]);
 
             state.pieceList.movePiece(61,63,Black);
 
@@ -354,6 +419,8 @@ void Board::unmakeRookCastle(Move move){
             state.mailBox[0] = int(Rook);
             state.mailBox[3] = 0;}
 
+            state.zhash ^= (Zobrist.pieceKeys[White][Rook][0] ^ Zobrist.pieceKeys[White][Rook][3]);
+
             state.pieceList.movePiece(0,3,White);
 
             break;
@@ -367,6 +434,9 @@ void Board::unmakeRookCastle(Move move){
 
             state.mailBox[7] = int(Rook);
             state.mailBox[5] = 0;}
+
+            state.zhash ^= (Zobrist.pieceKeys[White][Rook][5] ^ Zobrist.pieceKeys[White][Rook][7]);
+
 
             state.pieceList.movePiece(7,5,White);
 
@@ -383,6 +453,8 @@ void Board::unmakeRookCastle(Move move){
             state.mailBox[56] = int(Rook) + 8;
             state.mailBox[59] = 0;}
 
+            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][56] ^ Zobrist.pieceKeys[Black][Rook][59]);
+
             state.pieceList.movePiece(56,59,Black);
 
             break;
@@ -397,6 +469,8 @@ void Board::unmakeRookCastle(Move move){
 
             state.mailBox[63] = int(Rook) + 8;
             state.mailBox[61] = 0;}
+
+            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][61] ^ Zobrist.pieceKeys[Black][Rook][63]);
 
             state.pieceList.movePiece(63,61,Black);
 

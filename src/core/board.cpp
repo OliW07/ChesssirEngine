@@ -10,6 +10,7 @@
 #include "precompute.h"
 #include "utils/Types.h"
 #include "debug.h"
+#include "zobrist.h"
 
 using namespace precomputedData;
 
@@ -98,6 +99,9 @@ void Game::setPosition(std::string fen,MoveList moves){
     for(auto &move : moves){
         board.makeMove(move);
     }
+
+    board.state.zhash = generateFullHash(board);
+
 }
 
 
