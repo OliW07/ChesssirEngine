@@ -14,6 +14,7 @@ void Board::makeMove(Move move){
     history[historyIndex].capturedPiece = None;
     history[historyIndex].enPassantCapture = false;
     history[historyIndex].promotion = false;
+    history[historyIndex].zhash = state.zhash;
 
     state.zhash ^= Zobrist.sideKey;
     if(state.enPassantSquare != -1) state.zhash ^= Zobrist.enPassantKeys[convertLocationToColumns(state.enPassantSquare)];

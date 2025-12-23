@@ -16,6 +16,7 @@ struct SavedData {
     Pieces capturedPiece;
     bool enPassantCapture;
     bool promotion;
+    uint64_t zhash;
 
 };
 
