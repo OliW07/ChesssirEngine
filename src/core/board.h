@@ -74,7 +74,7 @@ class Game {
 
         void setPosition(std::string fen, MoveList moves);
         bool isDraw();
-        bool isThreeFoldRepition();
+        bool isTwoFoldRepition();
         bool isInsufficientMaterial();
         bool isFiftyMoveLimit();
 };

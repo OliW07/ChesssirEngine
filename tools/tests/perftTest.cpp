@@ -11,7 +11,6 @@ struct PerftCase{
 };
 
 
-//Readable error logging;
 std::ostream& operator<<(std::ostream& os, const PerftCase& test) {
 
     return os << "{ FEN: " << test.fen << ", Depth: " << test.depth << " }";

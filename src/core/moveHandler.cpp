@@ -82,8 +82,8 @@ void Board::makeMove(Move move){
     state.whiteToMove = !state.whiteToMove;
 
     historyIndex++;
+
      
-    
 }
 
 void Board::unmakeMove(Move move){
@@ -204,7 +204,7 @@ void Board::handleCapture(int from, int to,bool isWhite){
 
         //XOR the old castlingRights
         state.zhash ^= Zobrist.castlingKeys[state.castlingRights];
-switch(to){
+        switch(to){
             case(0):
                 state.castlingRights &= ~4;
                 break;

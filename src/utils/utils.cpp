@@ -79,13 +79,13 @@ Colours getSquareColour(int pos){
 
     if(rows % 2 == 0){
 
-        if(columns % 2 == 0) return White;
-        return Black;
+        if(columns % 2 == 0) return Black;
+        return White;
     }
 
-    if(columns % 2 == 0) return Black;
+    if(columns % 2 == 0) return White;
 
-    return White;
+    return Black;
 }
 
 void PieceList::addPiece(int pos, Colours colour){

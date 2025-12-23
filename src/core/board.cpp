@@ -2,6 +2,7 @@
 #include <bit>
 #include <string>
 #include <stdexcept>
+#include <algorithm>
 #include <cstdint>
 
 #include "fenHelper.h"
@@ -16,7 +17,7 @@ using namespace precomputedData;
 
 
 void Board::init(){
-
+    initZobristKeys();
     precomputeBitBoardMoves();
 }
 
@@ -96,11 +97,12 @@ void Game::setPosition(std::string fen,MoveList moves){
 
     board.isAdversaryWhite = !board.state.whiteToMove;
 
+    board.state.zhash = generateFullHash(board);
+
     for(auto &move : moves){
         board.makeMove(move);
     }
 
-    board.state.zhash = generateFullHash(board);
 
 }
 
@@ -129,10 +131,19 @@ bool Board::isSquareEmpty(int pos){
 
 bool Game::isDraw(){
     
-    return isThreeFoldRepition() || isInsufficientMaterial() || isFiftyMoveLimit();
+    return isTwoFoldRepition() || isInsufficientMaterial() || isFiftyMoveLimit();
 }
 
-bool Game::isThreeFoldRepition(){
+bool Game::isTwoFoldRepition(){
+
+    int maxHistoryDepth = std::max(0,board.historyIndex - board.state.halfMoveClock);
+
+    //Start at the last index of the same side to move, only look at the same colour to move as we are checking for duplicates
+    for(int i = board.historyIndex-2; i >= maxHistoryDepth; i-=2){
+        
+        if(board.state.zhash == board.history[i].zhash) return true;
+    }
+
     return false;
 }
 

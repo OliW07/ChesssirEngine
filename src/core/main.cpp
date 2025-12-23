@@ -5,8 +5,8 @@
 
 #include "board.h"
 #include "data/precompute.h"
-#include "tests/perft.h"
 #include "uci.h"
+#include "zobrist.h"
 
 int main(){
 

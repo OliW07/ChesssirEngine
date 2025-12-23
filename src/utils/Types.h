@@ -52,7 +52,6 @@ struct BoardState{
 
     PieceList pieceList;
 
-    //least four signficant bits represent, White Kingside, White Queenside, BlackKingside, BlackQueenside
     uint8_t castlingRights = 0;
 };
 

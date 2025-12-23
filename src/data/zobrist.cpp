@@ -31,11 +31,11 @@ void initZobristKeys(){
 uint64_t generateFullHash(Board &board){
     uint64_t hash = 0ULL;
 
-    for(int Colour = Black; Colour < White; Colour++){
+    for(int Colour = Black; Colour <= White; Colour++){
 
         for(int i = 0; i < board.state.pieceList.pieceCount[Colour]; i++){
             int loc = board.state.pieceList.list[Colour][i];
-            Pieces pieceType = (Pieces)(board.state.mailBox[loc] &= ~8);
+            Pieces pieceType = (Pieces)(board.state.mailBox[loc] & ~8);
             
             hash ^= Zobrist.pieceKeys[Colour][pieceType][loc];
 
