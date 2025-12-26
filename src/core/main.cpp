@@ -1,17 +1,19 @@
 #include <iostream>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
 
-
-#include "board.h"
-#include "data/precompute.h"
 #include "uci.h"
-#include "zobrist.h"
+#include "board.h"
 
 int main(){
+    //flush buffer for the gui immediately
+    std::setvbuf(stdout, NULL, _IONBF, 0);
+    std::setvbuf(stdin, NULL, _IONBF, 0);
 
-    std::cout << "Starting protocol communication" << std::endl;
-    readLoop();
+    Game game;
+    readLoop(game);
+
     return 0;
 }
 
