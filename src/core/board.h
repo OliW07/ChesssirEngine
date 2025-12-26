@@ -42,6 +42,7 @@ class Board{
         uint64_t getRay(int pos1, int pos2);
 
         void init();
+        void resetPosition();
         void makeMove(Move move);
         void unmakeMove(Move move);
         void unmakeRookCastle(Move move);

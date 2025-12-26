@@ -74,6 +74,18 @@ uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite){
 
 
 
+void Board::resetPosition(){
+    BoardState newState;
+    state = newState;
+    
+    isAdversaryWhite = false;
+    historyIndex = 0;
+    
+    for(int i = 0; i < 2048; i++){
+        history[i] = SavedData{};
+    }
+}
+
 int Board::getPieceEnum(int pos){
       //Toggle off the colour of piece, to get left with the enum
       return state.mailBox[pos] & ~8; 
@@ -95,7 +107,6 @@ int Board::getFirstBlocker(int pos, RaysDirection direction){
 void Game::setPosition(std::string fen,MoveList moves){
     parseFenString(fen,board.state);
 
-    board.isAdversaryWhite = !board.state.whiteToMove;
 
     board.state.zhash = generateFullHash(board);
 
@@ -103,6 +114,7 @@ void Game::setPosition(std::string fen,MoveList moves){
         board.makeMove(move);
     }
 
+    board.isAdversaryWhite = !board.state.whiteToMove;
 
 }
 
