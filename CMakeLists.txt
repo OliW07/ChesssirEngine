@@ -13,7 +13,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo) 
 endif()
 
-set(ENGINE_LIB_SOURCES
+add_library(core 
     src/core/board.cpp
     src/core/moveGenerator.cpp
     src/core/moveHandler.cpp
@@ -23,14 +23,12 @@ set(ENGINE_LIB_SOURCES
     src/utils/utils.cpp
     src/utils/fenHelper.cpp
     src/utils/uci.cpp
+    src/utils/log.cpp
     src/data/precomputeBitBoards.cpp
     src/data/zobrist.cpp
     tools/debug.cpp
     tools/perft.cpp
-    tools/perft.h
 )
-
-add_library(core ${ENGINE_LIB_SOURCES})
 
 target_include_directories(core 
     PUBLIC 
