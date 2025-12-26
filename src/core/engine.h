@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <atomic>
+#include <mutex>
 
 #include "utils/Types.h"
 
@@ -20,6 +21,7 @@ class Engine {
         int timeToThink;
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         std::atomic<bool> stopRequested = false;
+        mutable std::mutex uci_mutex;
 
         Move search();
         void writeBestMove();

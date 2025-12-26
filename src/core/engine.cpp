@@ -2,9 +2,12 @@
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
+#include <sstream>
 
 #include "moveGenerator.h"
 #include "utils/Types.h"
+#include "utils/log.h"
 #include "engine.h"
 #include "evaluate.h"
 
@@ -14,21 +17,24 @@ Move Engine::search(){
     game.board.isAdversaryWhite = !game.board.state.whiteToMove;
     
     setTimeToThink();
-
     
     Colours activeColour = (Colours)game.board.state.whiteToMove;
 
-    Move bestMove = {} ;
-    Move bestMoveThisIteration;
+    Move overallBestMove = {} ;
+    nodesVisited = 0; // Reset nodes at the start of a search
 
     int depth = 1;
 
     MoveList moves = game.moveGenerator.getAllMoves();
+    if (moves.count == 0) {
+        return {}; // Return a null move if there are no legal moves
+    }
+    overallBestMove = moves.moves[0]; // Default to the first legal move
     
     while(!abortSearch() && (game.info.depth == -1 || depth <= game.info.depth)){
-        
 
-        int bestScore = activeColour ? -2000000000 : 2000000000;
+        int bestScoreThisIteration = activeColour ? -2000000000 : 2000000000;
+        Move bestMoveThisIteration = moves.moves[0]; // Default to a valid move
 
         int alpha = -999999999,
             beta  =  999999999;
@@ -44,10 +50,10 @@ Move Engine::search(){
             }
             game.board.unmakeMove(move);
 
-            bool isBetter = activeColour ? (eval > bestScore) : (eval < bestScore);
+            bool isBetter = activeColour ? (eval > bestScoreThisIteration) : (eval < bestScoreThisIteration);
             if(isBetter){
-                bestScore = eval;
-                bestMove = move;
+                bestScoreThisIteration = eval;
+                bestMoveThisIteration = move;
             }
 
             if(activeColour && (eval>alpha)) alpha = eval;
@@ -55,21 +61,52 @@ Move Engine::search(){
             
             bool isPruning = activeColour ? (eval >= beta) : (eval <= alpha);
             if(isPruning){
-                bestMove = move;
+                bestMoveThisIteration = move;
                 break;
             }
 
         }
-        depth++;
 
+        if (!abortSearch()) {
+            overallBestMove = bestMoveThisIteration;
+
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+            long long nps = (elapsed > 0) ? (nodesVisited * 1000 / elapsed) : 0;
+
+            std::stringstream info;
+            info << "info depth " << depth 
+                 << " score cp " << bestScoreThisIteration
+                 << " nodes " << nodesVisited
+                 << " nps " << nps
+                 << " pv " << convertMoveToAlgebraicNotation(overallBestMove);
+            
+            log_uci(info.str(), uci_mutex);
+        }
+
+        depth++;
     }
 
-    return bestMove;
+    return overallBestMove;
 }
 
 void Engine::writeBestMove(){
-    Move bestMove = search();
-    std::cout << "bestmove " << convertMoveToAlgebraicNotation(bestMove) << std::endl;
+    std::ofstream df("engine_log.txt", std::ios::app);
+    df << "--- Thread Active ---" << std::endl;
+
+    log_uci("info string Chessir is calculating...", uci_mutex);
+
+    Move bestMove = search(); 
+    std::string moveStr = convertMoveToAlgebraicNotation(bestMove);
+
+    df << "Search finished. Resulting Move: [" << moveStr << "]" << std::endl;
+
+    if (!moveStr.empty()) {
+        log_uci("bestmove " + moveStr, uci_mutex);
+    }
+
+    df << "Confirmed sent to GUI: bestmove " << moveStr << std::endl;
+    df.close();
 }
 
 int Engine::miniMax(int maxDepth, int alpha, int beta){
@@ -77,14 +114,14 @@ int Engine::miniMax(int maxDepth, int alpha, int beta){
    nodesVisited++;
 
     if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
+    
+    // Removed old, inaccurate logging
         
-
     if(maxDepth == 0) return evaluateState(game.board);
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = activeColour ? -99999999 : 99999999;
     
-
  
     MoveList moves = game.moveGenerator.getAllMoves();
 
@@ -118,8 +155,6 @@ int Engine::miniMax(int maxDepth, int alpha, int beta){
         
         bool isPruning = activeColour ? (eval >= beta) : (eval <= alpha);
         if(isPruning) return bestScore;
-
-        
         
     }
     
