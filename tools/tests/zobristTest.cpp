@@ -34,8 +34,8 @@ TEST_P(GamePlayTestFixture,CheckZobristHash){
     }
 
     //Unmake the moves
-
-    for(int i = moves.count-1; i >=0; --i){
+    //Stop at i = 1 as that is the special index used for the best move in the search
+    for(int i = moves.count-1; i >=1; --i){
         game.board.unmakeMove(moves.moves[i]);
     }
 

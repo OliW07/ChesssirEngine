@@ -30,8 +30,10 @@ Move Engine::search(){
         return {}; // Return a null move if there are no legal moves
     }
     overallBestMove = moves.moves[0]; // Default to the first legal move
+
     
     while(!abortSearch() && (game.info.depth == -1 || depth <= game.info.depth)){
+
 
         int bestScoreThisIteration = activeColour ? -2000000000 : 2000000000;
         Move bestMoveThisIteration = moves.moves[0]; // Default to a valid move
@@ -69,6 +71,7 @@ Move Engine::search(){
 
         if (!abortSearch()) {
             overallBestMove = bestMoveThisIteration;
+            moves.setBestMove(overallBestMove);
 
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
