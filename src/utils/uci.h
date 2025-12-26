@@ -1,8 +1,9 @@
 #ifndef UCI_H
 #define UCI_H
 
-#include "board.h"
+// Forward-declare the Game class to avoid circular includes
+class Game;
 
-void readLoop();
+void readLoop(Game& game);
 
 #endif
