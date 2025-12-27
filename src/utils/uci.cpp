@@ -64,6 +64,7 @@ void readLoop(Game& game){
             std::string moveStr;
             while (ss >> moveStr) {
                 moves.add(convertAlgebraicNotationToMove(moveStr));
+                game.ply++;
             }
             game.board.resetPosition(); 
             game.setPosition(fen, moves);

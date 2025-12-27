@@ -5,6 +5,7 @@
 #include <atomic>
 #include <mutex>
 
+#include "tranpositionTable.h"
 #include "utils/Types.h"
 
 class Game;
@@ -22,12 +23,13 @@ class Engine {
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         std::atomic<bool> stopRequested = false;
         mutable std::mutex uci_mutex;
+        TranspositionTable tt{512};
 
         Move search();
         void writeBestMove();
         void setTimeToThink();
         bool abortSearch();
-        int miniMax(int maxDepth, int alpha, int beta);
+        int miniMax(int maxDepth, int alpha, int beta, int ply);
 
 };
 #endif

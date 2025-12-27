@@ -7,7 +7,7 @@
 extern ZobristKeys Zobrist;
 
 void Board::makeMove(Move move){
-
+    if(move.nullMove) return;
     history[historyIndex].halfMoveClock = state.halfMoveClock;
     history[historyIndex].enPassantLoc = state.enPassantSquare;
     history[historyIndex].castlingRights = state.castlingRights;

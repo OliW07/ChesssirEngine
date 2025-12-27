@@ -13,6 +13,7 @@ enum RaysDirection {North,South,East,West,NorthEast,SouthEast,NorthWest,SouthWes
 enum Colours {Black,White,Both};
 
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const int32_t MATESCORE = 30000;
 
 class PieceList {
     public:
@@ -59,12 +60,13 @@ struct BoardState{
 struct Move {
     
     bool nullMove = false;
-
-    int to;
-    int from;
+    uint8_t to;
+    uint8_t from;
     Pieces promotionPiece = None;
+    auto operator<=>(const Move&) const = default;
     
 };
+
 
 struct SearchInfo {
     int wtime = -1;

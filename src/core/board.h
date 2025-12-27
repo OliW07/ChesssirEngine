@@ -65,6 +65,7 @@ class Game {
     
     public:
         Board board;
+        int ply;
         MoveGenerator moveGenerator;
         AttackHandler attackHandler;
         Engine chesssir;

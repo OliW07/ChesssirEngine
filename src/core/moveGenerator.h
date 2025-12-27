@@ -8,12 +8,11 @@ class Game;
 
 struct MoveList {
     Move moves[256];
-
-    //Starting the count at one, as we always leave index 1 free for the bestMove
-    int count = 1;
+    int count;
 
     MoveList(){
         moves[0].nullMove = true;
+        count = 1;
     }
 
     inline void add(const Move &move){
@@ -24,11 +23,15 @@ struct MoveList {
 
     inline void setBestMove(const Move bestMove){
 
-        moves[0] = bestMove;
-        //We don't have to store old moves[0] and replace, as either it was null or it was a previous best move, which was 
-        //already a duplicate in the list, this ensures we only have one duplicate best move, which the TT will filter 
-        //out so we don't have to search the move again
-        
+        for(int i = 1; i < count; i++){
+            if(moves[i] == bestMove){
+                moves[0] = moves[i];
+                moves[i] = moves[count-1];
+                //Slot the best move into the empty slot so decrease count as null move is gone
+                count--;
+                break;
+            }
+        }
     }
 
     Move *begin() { 

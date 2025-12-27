@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "moveGenerator.h"
+#include "tranpositionTable.h"
 #include "utils/Types.h"
 #include "utils/log.h"
 #include "engine.h"
@@ -44,7 +45,7 @@ Move Engine::search(){
         for(auto &move : moves){
            
             game.board.makeMove(move);
-            int eval = miniMax(depth,alpha,beta);
+            int eval = miniMax(depth,alpha,beta,game.ply);
 
             if(abortSearch()){
                 game.board.unmakeMove(move);
@@ -112,9 +113,25 @@ void Engine::writeBestMove(){
     df.close();
 }
 
-int Engine::miniMax(int maxDepth, int alpha, int beta){
+int Engine::miniMax(int maxDepth, int alpha, int beta, int ply){
     
-   nodesVisited++;
+    TTEntry stored;
+    bool foundInTT = tt.probe(game.board.state.zhash,stored);
+    if(foundInTT){
+    
+        if(stored.eval >= MATESCORE-1000){
+            stored.eval -= ply;
+        }else if(stored.eval <= -MATESCORE+1000){
+            stored.eval += ply;
+        }
+        if(stored.depth >= maxDepth){
+
+            if(stored.type == NodeType::Exact) return stored.eval;
+            if(stored.type == NodeType::Lowerbound && stored.eval  >= beta) return stored.eval;
+            if(stored.type == NodeType::Upperbound && stored.eval <= alpha) return stored.eval;
+        }
+    }
+    nodesVisited++;
 
     if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
     
@@ -124,16 +141,22 @@ int Engine::miniMax(int maxDepth, int alpha, int beta){
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = activeColour ? -99999999 : 99999999;
-    
+    int alphaOrig = alpha;
+    Move bestMoveThisNode = {};
  
     MoveList moves = game.moveGenerator.getAllMoves();
+
+    //If the stored best move is not null
+    if (foundInTT && stored.bestMove != 0 && !((stored.bestMove >> 15) & 1)) { 
+        moves.setBestMove(unpackMove(stored.bestMove)); 
+    }
 
     if(moves.count == 0){
 
         if(game.attackHandler.isSquareAttacked(
                 game.board.getKingLocation(activeColour), !activeColour)){
             //Checkmate
-            return activeColour ? (-99999999 - maxDepth) : (99999999 + maxDepth);
+            return activeColour ? (-MATESCORE + ply) : (MATESCORE - ply);
         }
         //Stalemate
         return 0;
@@ -146,21 +169,34 @@ int Engine::miniMax(int maxDepth, int alpha, int beta){
        
         game.board.makeMove(move);
 
-        int eval = miniMax(maxDepth-1,alpha,beta);
+        int eval = miniMax(maxDepth-1,alpha,beta,ply+1);
 
         game.board.unmakeMove(move);
 
+
         bool isBetter = activeColour ? (eval > bestScore) : (eval < bestScore);
-        if(isBetter) bestScore = eval;
+        if(isBetter){
+            bestScore = eval;
+            bestMoveThisNode = move;
+        }
 
         if(activeColour && (eval>alpha)) alpha = eval;
         if(!activeColour && (eval<beta)) beta = eval;
         
         bool isPruning = activeColour ? (eval >= beta) : (eval <= alpha);
-        if(isPruning) return bestScore;
+        if(isPruning) break;
         
     }
-    
+    int scoreToStore = bestScore;
+    if (scoreToStore > MATESCORE-1000) scoreToStore += ply;
+    if (scoreToStore < -MATESCORE+1000) scoreToStore -= ply;
+
+    //Update TT with searched results
+    NodeType type = NodeType::Exact;
+    if(bestScore <= alphaOrig) type = NodeType::Upperbound;
+    if(bestScore >= beta) type = NodeType::Lowerbound;
+    tt.write(game.board.state.zhash,maxDepth,ply,scoreToStore,bestMoveThisNode,type);
+
     return bestScore;
 }
 
