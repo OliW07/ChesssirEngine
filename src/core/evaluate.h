@@ -4,7 +4,9 @@
 #include "utils/Types.h"
 #include "board.h"
 
-int evaluateState(Board &boardInstance);
+
+void setFullEval(Board &board);
+
 
 inline constexpr std::array<int, 7> PieceValues = []{
     std::array<int, 7> values{};

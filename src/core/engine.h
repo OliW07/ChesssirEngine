@@ -8,6 +8,7 @@
 #include "tranpositionTable.h"
 #include "utils/Types.h"
 
+
 class Game;
 
 class Engine {
@@ -16,7 +17,9 @@ class Engine {
         Game &game;
     public:
 
-        Engine(Game &gameParam) : game(gameParam) {};
+        Engine(Game &gameParam) : game(gameParam) {
+
+        }
 
         long long nodesVisited = 0;
         int timeToThink;

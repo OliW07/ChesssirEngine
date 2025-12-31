@@ -29,15 +29,18 @@ TEST_P(GamePlayTestFixture,CheckZobristHash){
         moves.add(move);
     }
 
+    std::vector<Move> moveHistory;
+
     for(auto &move : moves){
         game.board.makeMove(move);
+        moveHistory.push_back(move); // Store the move as it was played
     }
 
-    //Unmake the moves
-    //Stop at i = 1 as that is the special index used for the best move in the search
-    for(int i = moves.count-1; i >=1; --i){
-        game.board.unmakeMove(moves.moves[i]);
+    // Unmake the moves using the history stack
+    for(int i = moveHistory.size() - 1; i >= 0; --i){
+        game.board.unmakeMove(moveHistory[i]);
     }
+   
 
     EXPECT_EQ(startingHash,game.board.state.zhash);
 }

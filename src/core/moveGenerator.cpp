@@ -287,3 +287,5 @@ MoveList MoveGenerator::getAllMoves(){
 
     return moves;
 }
+
+

@@ -1,27 +1,28 @@
 #include "evaluate.h"
+#include "board.h"
 #include "utils/Types.h"
 
 
 
-int evaluateState(Board &boardInstance){
-    
+void setFullEval(Board &board){
+   
+    board.eval = 0;
 
-    int eval = 0;
     
-    for(int i = 0; i < boardInstance.state.pieceList.pieceCount[White]; i++){
+    for(int i = 0; i < board.state.pieceList.pieceCount[White]; i++){
         
-        Pieces pieceType = (Pieces)boardInstance.getPieceEnum(boardInstance.state.pieceList.list[White][i]);
+        Pieces pieceType = (Pieces)board.getPieceEnum(board.state.pieceList.list[White][i]);
 
-        eval += PieceValues[static_cast<size_t>(pieceType)];
+        board.eval += PieceValues[static_cast<size_t>(pieceType)];
     }
 
-    for(int i = 0; i < boardInstance.state.pieceList.pieceCount[Black]; i++){
+    for(int i = 0; i < board.state.pieceList.pieceCount[Black]; i++){
         
-        Pieces pieceType = (Pieces)boardInstance.getPieceEnum(boardInstance.state.pieceList.list[Black][i]);
+        Pieces pieceType = (Pieces)board.getPieceEnum(board.state.pieceList.list[Black][i]);
 
-        eval -= PieceValues[static_cast<size_t>(pieceType)];
+        board.eval -= PieceValues[static_cast<size_t>(pieceType)];
     }
 
-    return eval;
+    
 }
 

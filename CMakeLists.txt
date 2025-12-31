@@ -18,9 +18,9 @@ add_library(core
     src/core/moveGenerator.cpp
     src/core/moveHandler.cpp
     src/core/attackHandler.cpp
+    src/core/transpositionTable.cpp
     src/core/evaluate.cpp
     src/core/engine.cpp
-    src/core/transpositionTable.cpp
     src/utils/utils.cpp
     src/utils/fenHelper.cpp
     src/utils/uci.cpp
@@ -64,7 +64,10 @@ add_executable(
     tools/tests/searchTest.cpp
     tools/tests/drawTest.cpp
     tools/tests/zobristTest.cpp
+    tools/tests/evalTest.cpp
     tools/tests/TTTest.cpp
+    tools/tests/moveOrderTest.cpp
+
 )
 target_link_libraries(unit_tests PRIVATE core gtest_main)
 

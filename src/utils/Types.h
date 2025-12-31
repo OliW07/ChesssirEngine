@@ -63,6 +63,7 @@ struct Move {
     uint8_t to;
     uint8_t from;
     Pieces promotionPiece = None;
+    int orderScore = 0;
     auto operator<=>(const Move&) const = default;
     
 };

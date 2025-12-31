@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "evaluate.h"
 #include "fenHelper.h"
 #include "board.h"
 #include "Types.h"
@@ -115,7 +116,8 @@ void Game::setPosition(std::string fen,MoveList moves){
     }
 
     board.isAdversaryWhite = !board.state.whiteToMove;
-
+    
+    setFullEval(board);
 }
 
 
@@ -205,4 +207,19 @@ bool Game::isInsufficientMaterial(){
 bool Game::isFiftyMoveLimit(){
     return (board.state.halfMoveClock >= 50);
 }
+
+bool Board::isCapture(Move &move){
+    return (state.occupancy[Both] & (1ULL << move.to));
+}
+
+int Board::scoreMove(Move &move){
+    if(isCapture(move)){
+        return (10 * PieceValues[getPieceEnum(move.to)]) - PieceValues[getPieceEnum(move.from)];
+    }
+    return 0;
+}
+
+
+
+
 

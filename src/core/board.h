@@ -7,7 +7,10 @@
 #include "utils/Types.h"
 #include "moveGenerator.h"
 #include "engine.h"
-    
+
+
+
+
 struct SavedData {
 
     int halfMoveClock;
@@ -29,11 +32,13 @@ class Board{
         BoardState state;
         bool isAdversaryWhite;
         int historyIndex = 0;
+        int eval = 0; 
 
         bool isAdversaryTurn();
         bool isPieceWhite(int pos);
         bool isSquareEmpty(int pos);
         bool isCheck(Colours kingColour);
+        bool isCapture(Move &move);
    
         uint64_t getFriendlyPieces(int pos);
         uint64_t getEnemyPieces(int pos);
@@ -53,6 +58,7 @@ class Board{
         void updateCastlingRights(int from, bool isWhite, Pieces pieceType);
         void saveHistory();
 
+        int scoreMove(Move &move);
         int getPieceEnum(int pos);
         int getFirstBlocker(int pos,RaysDirection direction);
     
@@ -70,7 +76,8 @@ class Game {
         AttackHandler attackHandler;
         Engine chesssir;
 
-        Game() : moveGenerator(*this), attackHandler(*this), chesssir(*this) {};
+        Game() : moveGenerator(*this), attackHandler(*this), chesssir(*this) {
+        };
 
         SearchInfo info;
 

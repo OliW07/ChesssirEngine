@@ -10,7 +10,8 @@
 #include "utils/Types.h"
 #include "utils/log.h"
 #include "engine.h"
-#include "evaluate.h"
+#include "board.h"
+
 
 Move Engine::search(){
 
@@ -41,9 +42,13 @@ Move Engine::search(){
 
         int alpha = -999999999,
             beta  =  999999999;
+    
+        for(int i = 0; i < moves.count; i++){
 
-        for(auto &move : moves){
-           
+            //Sort most caputres first
+            moves.sortNext(i);
+            Move move = moves.moves[i];
+
             game.board.makeMove(move);
             int eval = miniMax(depth,alpha,beta,game.ply);
 
@@ -67,7 +72,7 @@ Move Engine::search(){
                 bestMoveThisIteration = move;
                 break;
             }
-
+            
         }
 
         if (!abortSearch()) {
@@ -137,7 +142,7 @@ int Engine::miniMax(int maxDepth, int alpha, int beta, int ply){
     
     // Removed old, inaccurate logging
         
-    if(maxDepth == 0) return evaluateState(game.board);
+    if(maxDepth == 0) return game.board.eval;
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = activeColour ? -99999999 : 99999999;

@@ -8,12 +8,9 @@ class Game;
 
 struct MoveList {
     Move moves[256];
-    int count;
+    int count = 0;
 
-    MoveList(){
-        moves[0].nullMove = true;
-        count = 1;
-    }
+    
 
     inline void add(const Move &move){
         if(count < 256){
@@ -25,20 +22,28 @@ struct MoveList {
 
         for(int i = 1; i < count; i++){
             if(moves[i] == bestMove){
-                moves[0] = moves[i];
-                moves[i] = moves[count-1];
-                //Slot the best move into the empty slot so decrease count as null move is gone
-                count--;
+                moves[i].orderScore = 100000;
                 break;
             }
         }
     }
 
-    Move *begin() { 
+   inline void sortNext(int currentIdx) {
+        int bestScore = -1;
+        int bestIndex = currentIdx;
 
-        //If the first index (best move slot) is empty, skip it
-        if(moves[0].nullMove) return moves + 1;
-        else return moves;
+        for (int i = currentIdx; i < count; i++) {
+            if (moves[i].orderScore > bestScore) {
+                bestScore = moves[i].orderScore;
+                bestIndex = i;
+            }
+        }
+        // Swap the best one found into the current slot
+        std::swap(moves[currentIdx], moves[bestIndex]);
+    }
+
+    Move *begin() { 
+        return moves;
     };
     Move *end() { return moves + count;};
 };
