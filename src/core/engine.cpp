@@ -11,6 +11,7 @@
 #include "utils/log.h"
 #include "engine.h"
 #include "board.h"
+#include "evaluate.h"
 
 
 Move Engine::search(){
@@ -25,78 +26,63 @@ Move Engine::search(){
     Move overallBestMove = {} ;
     nodesVisited = 0; // Reset nodes at the start of a search
 
-    int depth = 1;
+    int maxDepth = (game.info.depth == -1) ? 40 : game.info.depth;
 
-    MoveList moves = game.moveGenerator.getAllMoves();
-    if (moves.count == 0) {
-        return {}; // Return a null move if there are no legal moves
-    }
-    overallBestMove = moves.moves[0]; // Default to the first legal move
+    int alpha = -999999999,
+    beta  =  999999999;
 
-    
-    while(!abortSearch() && (game.info.depth == -1 || depth <= game.info.depth)){
+    for(int currentDepth = 1; currentDepth <= maxDepth; currentDepth++){
 
+        MoveList moves = game.moveGenerator.getAllMoves();
+        if (moves.count == 0) {
+            overallBestMove = {}; // Return a null move if there are no legal moves
+            return {}; 
+        }
 
-        int bestScoreThisIteration = activeColour ? -2000000000 : 2000000000;
-        Move bestMoveThisIteration = moves.moves[0]; // Default to a valid move
+        int bestScore = -999999999;
+        Move bestMoveFromRoot = moves.moves[0];
 
-        int alpha = -999999999,
-            beta  =  999999999;
-    
-        for(int i = 0; i < moves.count; i++){
-
-            //Sort most caputres first
-            moves.sortNext(i);
-            Move move = moves.moves[i];
-
+        for(auto &move : moves){
             game.board.makeMove(move);
-            int eval = miniMax(depth,alpha,beta,game.ply);
-
-            if(abortSearch()){
-                game.board.unmakeMove(move);
-                break;
-            }
+            int eval = -negamax(currentDepth-1, -beta, -alpha, game.ply + 1);
             game.board.unmakeMove(move);
-
-            bool isBetter = activeColour ? (eval > bestScoreThisIteration) : (eval < bestScoreThisIteration);
-            if(isBetter){
-                bestScoreThisIteration = eval;
-                bestMoveThisIteration = move;
-            }
-
-            if(activeColour && (eval>alpha)) alpha = eval;
-            if(!activeColour && (eval<beta)) beta = eval;
             
-            bool isPruning = activeColour ? (eval >= beta) : (eval <= alpha);
-            if(isPruning){
-                bestMoveThisIteration = move;
-                break;
+            
+            
+            if(eval > bestScore){
+                bestScore = eval;
+                bestMoveFromRoot = move;
             }
             
+            alpha = std::max(alpha, eval);
+            if(alpha >= beta) break;
         }
 
-        if (!abortSearch()) {
-            overallBestMove = bestMoveThisIteration;
-            moves.setBestMove(overallBestMove);
+        if(abortSearch()) break;
 
-            auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-            long long nps = (elapsed > 0) ? (nodesVisited * 1000 / elapsed) : 0;
+        overallBestMove = bestMoveFromRoot;
 
-            std::stringstream info;
-            info << "info depth " << depth 
-                 << " score cp " << bestScoreThisIteration
-                 << " nodes " << nodesVisited
-                 << " nps " << nps
-                 << " pv " << convertMoveToAlgebraicNotation(overallBestMove);
-            
-            log_uci(info.str(), uci_mutex);
-        }
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+        long long nps = (elapsed > 0) ? (nodesVisited * 1000 / elapsed) : 0;
 
-        depth++;
+        std::stringstream info;
+        info << "info depth " << currentDepth 
+             << " score cp " << bestScore
+             << " nodes " << nodesVisited
+             << " nps " << nps
+             << " pv " << convertMoveToAlgebraicNotation(overallBestMove);
+        
+        log_uci(info.str(), uci_mutex);
+
+
+        //Found a forced mate, no point trying to find the best move
+        if(std::abs(bestScore) > MATESCORE - 1000) break;
+
     }
-
+   
     return overallBestMove;
+
 }
 
 void Engine::writeBestMove(){
@@ -118,7 +104,7 @@ void Engine::writeBestMove(){
     df.close();
 }
 
-int Engine::miniMax(int maxDepth, int alpha, int beta, int ply){
+int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
     
     TTEntry stored;
     bool foundInTT = tt.probe(game.board.state.zhash,stored);
@@ -140,12 +126,15 @@ int Engine::miniMax(int maxDepth, int alpha, int beta, int ply){
 
     if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
     
-    // Removed old, inaccurate logging
         
-    if(maxDepth == 0) return game.board.eval;
+    if(maxDepth == 0) {
+        setFullEval(game.board);
+        
+        return game.board.eval;
+    }
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
-    int bestScore = activeColour ? -99999999 : 99999999;
+    int bestScore = -999999;
     int alphaOrig = alpha;
     Move bestMoveThisNode = {};
  
@@ -158,13 +147,8 @@ int Engine::miniMax(int maxDepth, int alpha, int beta, int ply){
 
     if(moves.count == 0){
 
-        if(game.attackHandler.isSquareAttacked(
-                game.board.getKingLocation(activeColour), !activeColour)){
-            //Checkmate
-            return activeColour ? (-MATESCORE + ply) : (MATESCORE - ply);
-        }
-        //Stalemate
-        return 0;
+        bool inCheck = game.attackHandler.isSquareAttacked(game.board.getKingLocation(activeColour), !activeColour);
+        return inCheck ? (-MATESCORE + ply) : 0;
     }
 
     //Check for special draws
@@ -174,32 +158,34 @@ int Engine::miniMax(int maxDepth, int alpha, int beta, int ply){
        
         game.board.makeMove(move);
 
-        int eval = miniMax(maxDepth-1,alpha,beta,ply+1);
+        int eval = -negamax(maxDepth-1,-beta,-alpha,ply+1);
 
         game.board.unmakeMove(move);
 
-
-        bool isBetter = activeColour ? (eval > bestScore) : (eval < bestScore);
-        if(isBetter){
+        if(eval > bestScore){
             bestScore = eval;
             bestMoveThisNode = move;
         }
 
-        if(activeColour && (eval>alpha)) alpha = eval;
-        if(!activeColour && (eval<beta)) beta = eval;
-        
-        bool isPruning = activeColour ? (eval >= beta) : (eval <= alpha);
-        if(isPruning) break;
-        
+        if(eval >= beta){
+            tt.write(game.board.state.zhash, maxDepth, ply, eval, move, NodeType::Lowerbound);
+            return beta;
+        }
+
+        if(eval > alpha){
+            alpha = eval;
+        }
+         
     }
     int scoreToStore = bestScore;
     if (scoreToStore > MATESCORE-1000) scoreToStore += ply;
     if (scoreToStore < -MATESCORE+1000) scoreToStore -= ply;
 
+
     //Update TT with searched results
     NodeType type = NodeType::Exact;
     if(bestScore <= alphaOrig) type = NodeType::Upperbound;
-    if(bestScore >= beta) type = NodeType::Lowerbound;
+
     tt.write(game.board.state.zhash,maxDepth,ply,scoreToStore,bestMoveThisNode,type);
 
     return bestScore;

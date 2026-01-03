@@ -32,7 +32,7 @@ class Engine {
         void writeBestMove();
         void setTimeToThink();
         bool abortSearch();
-        int miniMax(int maxDepth, int alpha, int beta, int ply);
+        int negamax(int maxDepth, int alpha, int beta, int ply);
 
 };
 #endif

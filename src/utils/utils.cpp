@@ -167,6 +167,11 @@ RaysDirection convertPositionsToDirections(int pos1, int pos2){
 }
 
 std::string convertMoveToAlgebraicNotation(Move move){
+    // Check for invalid moves (null moves or uninitialized moves)
+    if(move.nullMove || move.from > 63 || move.to > 63) {
+        return "0000"; // Return null move notation for invalid moves
+    }
+    
     char numberTo = convertLocationToRows(move.to) + '1';
     char letterTo = convertLocationToColumns(move.to) + 'a';
 

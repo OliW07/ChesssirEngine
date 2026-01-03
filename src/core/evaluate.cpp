@@ -23,6 +23,7 @@ void setFullEval(Board &board){
         board.eval -= PieceValues[static_cast<size_t>(pieceType)];
     }
 
+    if(!board.state.whiteToMove) board.eval *= -1;
     
 }
 

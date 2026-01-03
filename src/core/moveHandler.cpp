@@ -87,7 +87,7 @@ void Board::makeMove(Move move){
 
     historyIndex++;
 
-     
+    // eval is not flipped in negamax - the algorithm handles perspective changes 
 }
 
 void Board::unmakeMove(Move move){
@@ -168,7 +168,7 @@ void Board::unmakeMove(Move move){
         uint64_t *capturedBitBoard = getBitBoardFromPiece(Pawn,!isWhite);
         *capturedBitBoard ^= pawnMask;
 
-        eval += (isWhite ? PieceValues[Pawn] : -PieceValues[Pawn]);
+        eval += PieceValues[Pawn];
         
         state.occupancy[!isWhite] ^= pawnMask;
         state.occupancy[Both] ^= pawnMask;
@@ -194,7 +194,7 @@ void Board::unmakeMove(Move move){
         state.mailBox[move.to] = convertPieceToBinary(restored.capturedPiece, !isWhite);
         state.pieceList.addPiece(move.to, (Colours)!isWhite);
 
-        eval += (isWhite ? PieceValues[restored.capturedPiece] : -PieceValues[restored.capturedPiece]);
+        eval += PieceValues[restored.capturedPiece];
     }
 
 
@@ -231,7 +231,7 @@ void Board::handleCapture(int from, int to,bool isWhite){
         state.zhash ^= Zobrist.castlingKeys[state.castlingRights];
     }
 
-    eval -= (isWhite ? PieceValues[capturedPiece] : -PieceValues[capturedPiece]);
+    eval -= PieceValues[capturedPiece];
 
     uint64_t *capturedBitBoard = getBitBoardFromPiece(capturedPiece,!isWhite);
     uint64_t capturedMask = (1ULL << to);
@@ -257,7 +257,7 @@ void Board::handleEnpassant(int from, int to, bool isWhite){
     int capturePos = isWhite ? to - 8 : to + 8;
     uint64_t captureMask = 1ULL << capturePos;
 
-    eval -= (isWhite ? PieceValues[Pawn] : -PieceValues[Pawn]);
+    eval -= PieceValues[Pawn];
 
     *capturedBitBoard ^= captureMask;
     state.occupancy[!isWhite] ^= captureMask;
@@ -334,8 +334,8 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
             state.zhash ^= Zobrist.pieceKeys[isWhite][promotionPiece][to];
             state.zhash ^= Zobrist.pieceKeys[isWhite][Pawn][to]; 
             
-            eval += (isWhite ? PieceValues[promotionPiece] : -PieceValues[promotionPiece]);
-            eval -= (isWhite ? PieceValues[Pawn] : -PieceValues[Pawn]);
+            eval += PieceValues[promotionPiece];
+            eval -= PieceValues[Pawn];
 
             //Dont need to change piecelist as the location of the promotion piece is the same as where the pawn just moved to.
             
