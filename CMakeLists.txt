@@ -70,8 +70,6 @@ target_link_libraries(chess_engine PRIVATE core)
     )
     target_link_libraries(unit_tests PRIVATE core gtest_main)
 
-add_executable(debug_eval_test debug_eval_test.cpp)
-target_link_libraries(debug_eval_test PRIVATE core)
 
     include(GoogleTest)
     gtest_discover_tests(unit_tests)
