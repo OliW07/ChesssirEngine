@@ -87,13 +87,11 @@ void Board::makeMove(Move move){
 
     historyIndex++;
 
-    eval *= -1;
 
 }
 
 void Board::unmakeMove(Move move){
 
-    eval *= -1;
  
     state.whiteToMove = !state.whiteToMove;
     state.zhash ^= Zobrist.sideKey;
@@ -124,8 +122,9 @@ void Board::unmakeMove(Move move){
         state.zhash ^= Zobrist.pieceKeys[isWhite][Pawn][move.to];
         state.zhash ^= Zobrist.pieceKeys[isWhite][promotionType][move.to];
 
-        eval -= PieceValues[promotionType];
-        eval += PieceValues[Pawn];
+        eval -= isWhite ? PieceValues[promotionType] : -PieceValues[promotionType];
+        eval += isWhite ? PieceValues[Pawn] : -PieceValues[Pawn];
+    
         
     }
     //XOR old hash data out
@@ -264,7 +263,7 @@ void Board::handleEnpassant(int from, int to, bool isWhite){
     int capturePos = isWhite ? to - 8 : to + 8;
     uint64_t captureMask = 1ULL << capturePos;
 
-    eval += PieceValues[Pawn];
+    eval += isWhite ? PieceValues[Pawn] : -PieceValues[Pawn];
 
     *capturedBitBoard ^= captureMask;
     state.occupancy[!isWhite] ^= captureMask;
@@ -341,8 +340,8 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
             state.zhash ^= Zobrist.pieceKeys[isWhite][promotionPiece][to];
             state.zhash ^= Zobrist.pieceKeys[isWhite][Pawn][to]; 
             
-            eval += PieceValues[promotionPiece];
-            eval -= PieceValues[Pawn];
+            eval += isWhite ? PieceValues[promotionPiece] : -PieceValues[promotionPiece];
+            eval -= isWhite ? PieceValues[Pawn] : -PieceValues[Pawn];
 
             //Dont need to change piecelist as the location of the promotion piece is the same as where the pawn just moved to.
             

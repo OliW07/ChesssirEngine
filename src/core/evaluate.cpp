@@ -19,8 +19,6 @@ int generateFullEval(Board &board){
         eval -= PieceValues[static_cast<size_t>(pieceType)];
     }
 
-    if(!board.state.whiteToMove) eval *= -1;
-   
     return eval;
 
 
