@@ -30,11 +30,11 @@ class Board{
         
         Board(){init();};
         BoardState state;
-        bool isAdversaryWhite;
+        bool enginePlaysWhite;
         int historyIndex = 0;
         int eval = 0; 
 
-        bool isAdversaryTurn();
+        
         bool isPieceWhite(int pos);
         bool isSquareEmpty(int pos);
         bool isCheck(Colours kingColour);

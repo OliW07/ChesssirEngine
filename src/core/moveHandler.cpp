@@ -87,11 +87,14 @@ void Board::makeMove(Move move){
 
     historyIndex++;
 
-    // eval is not flipped in negamax - the algorithm handles perspective changes 
+    eval *= -1;
+
 }
 
 void Board::unmakeMove(Move move){
 
+    eval *= -1;
+ 
     state.whiteToMove = !state.whiteToMove;
     state.zhash ^= Zobrist.sideKey;
 
@@ -120,6 +123,9 @@ void Board::unmakeMove(Move move){
         state.bitboards[Both][Pawn] ^= newPieceMask;
         state.zhash ^= Zobrist.pieceKeys[isWhite][Pawn][move.to];
         state.zhash ^= Zobrist.pieceKeys[isWhite][promotionType][move.to];
+
+        eval -= PieceValues[promotionType];
+        eval += PieceValues[Pawn];
         
     }
     //XOR old hash data out
@@ -168,7 +174,7 @@ void Board::unmakeMove(Move move){
         uint64_t *capturedBitBoard = getBitBoardFromPiece(Pawn,!isWhite);
         *capturedBitBoard ^= pawnMask;
 
-        eval += PieceValues[Pawn];
+        eval -= (isWhite ? PieceValues[Pawn] : -PieceValues[Pawn]);
         
         state.occupancy[!isWhite] ^= pawnMask;
         state.occupancy[Both] ^= pawnMask;
@@ -194,12 +200,12 @@ void Board::unmakeMove(Move move){
         state.mailBox[move.to] = convertPieceToBinary(restored.capturedPiece, !isWhite);
         state.pieceList.addPiece(move.to, (Colours)!isWhite);
 
-        eval += PieceValues[restored.capturedPiece];
+        eval -= (isWhite ? PieceValues[restored.capturedPiece] : -PieceValues[restored.capturedPiece]);
     }
 
 
     if(state.whiteToMove != state.whiteStarts) state.fullMoveClock--;
-
+    
 }
 
 void Board::handleCapture(int from, int to,bool isWhite){
@@ -231,8 +237,9 @@ void Board::handleCapture(int from, int to,bool isWhite){
         state.zhash ^= Zobrist.castlingKeys[state.castlingRights];
     }
 
-    eval -= PieceValues[capturedPiece];
-
+    //Caputuring an enemy piece increases your sides eval
+    eval += (isWhite ? PieceValues[capturedPiece] : -PieceValues[capturedPiece]);
+    
     uint64_t *capturedBitBoard = getBitBoardFromPiece(capturedPiece,!isWhite);
     uint64_t capturedMask = (1ULL << to);
 
@@ -257,7 +264,7 @@ void Board::handleEnpassant(int from, int to, bool isWhite){
     int capturePos = isWhite ? to - 8 : to + 8;
     uint64_t captureMask = 1ULL << capturePos;
 
-    eval -= PieceValues[Pawn];
+    eval += PieceValues[Pawn];
 
     *capturedBitBoard ^= captureMask;
     state.occupancy[!isWhite] ^= captureMask;

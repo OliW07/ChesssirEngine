@@ -79,7 +79,7 @@ void Board::resetPosition(){
     BoardState newState;
     state = newState;
     
-    isAdversaryWhite = false;
+    enginePlaysWhite = false;
     historyIndex = 0;
     
     for(int i = 0; i < 2048; i++){
@@ -115,18 +115,14 @@ void Game::setPosition(std::string fen,MoveList moves){
         board.makeMove(move);
     }
 
-    board.isAdversaryWhite = !board.state.whiteToMove;
+    board.enginePlaysWhite = board.state.whiteToMove;
     
     setFullEval(board);
 }
 
 
 
-bool Board::isAdversaryTurn(){
 
-    return state.whiteToMove ? isAdversaryWhite : !isAdversaryWhite;
-    
-}
 
 bool Board::isPieceWhite(int pos){
     return (1ULL << pos) & state.occupancy[White];

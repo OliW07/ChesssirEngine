@@ -64,8 +64,16 @@ struct Move {
     uint8_t from;
     Pieces promotionPiece = None;
     int orderScore = 0;
-    auto operator<=>(const Move&) const = default;
-    
+
+    bool operator==(const Move& otherMove) {
+
+        return (nullMove == otherMove.nullMove &&
+                to == otherMove.to &&
+                from == otherMove.from &&
+                promotionPiece == otherMove.promotionPiece);
+    }
+
+   
 };
 
 
@@ -130,6 +138,7 @@ bool pieceWrapsTheBoard(int pos1, int pos2);
 uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite);
 
 RaysDirection convertPositionsToDirections(int pos1, int pos2);
+
 
 
 Colours getSquareColour(int pos);

@@ -46,30 +46,32 @@ add_executable(
     src/core/main.cpp
 )
 target_link_libraries(chess_engine PRIVATE core)
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/heads/main.zip
+    )
+    # Prevent GTest from overriding your compiler flags (optional but safer)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
 
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/refs/heads/main.zip
-)
-# Prevent GTest from overriding your compiler flags (optional but safer)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+    enable_testing()
 
-enable_testing()
+    add_executable(
+        unit_tests 
+        tools/tests/perftTest.cpp
+        tools/tests/searchTest.cpp
+        tools/tests/drawTest.cpp
+        tools/tests/zobristTest.cpp
+        tools/tests/TTTest.cpp
+        tools/tests/evalTest.cpp
+        tools/tests/moveOrderTest.cpp
+        
+    )
+    target_link_libraries(unit_tests PRIVATE core gtest_main)
 
-add_executable(
-    unit_tests 
-    tools/tests/perftTest.cpp
-    tools/tests/searchTest.cpp
-    tools/tests/drawTest.cpp
-    tools/tests/zobristTest.cpp
-    tools/tests/evalTest.cpp
-    tools/tests/TTTest.cpp
-    tools/tests/moveOrderTest.cpp
+add_executable(debug_eval_test debug_eval_test.cpp)
+target_link_libraries(debug_eval_test PRIVATE core)
 
-)
-target_link_libraries(unit_tests PRIVATE core gtest_main)
-
-include(GoogleTest)
-gtest_discover_tests(unit_tests)
+    include(GoogleTest)
+    gtest_discover_tests(unit_tests)

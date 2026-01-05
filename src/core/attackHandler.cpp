@@ -15,7 +15,6 @@ uint64_t AttackHandler::getAttacks(const int pos){
     uint64_t PieceAttacks = 0ULL;
     uint64_t target = 1ULL << pos;
 
-
     
     if(game.board.isSquareEmpty(pos)) return 0ULL;
 
@@ -273,9 +272,3 @@ bool AttackHandler::isSquareAttacked(int pos, bool attackingColourIsWhite){
 
 }
 
-bool AttackHandler::isCheck(Colours kingColour){
-
-    int kingLoc = game.board.getKingLocation(kingColour);
-
-    return isSquareAttacked(kingLoc, !kingColour);
-}

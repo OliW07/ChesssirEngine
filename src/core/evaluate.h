@@ -7,6 +7,7 @@
 
 void setFullEval(Board &board);
 
+int generateFullEval(Board &board);
 
 inline constexpr std::array<int, 7> PieceValues = []{
     std::array<int, 7> values{};

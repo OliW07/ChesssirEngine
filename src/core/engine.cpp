@@ -12,18 +12,18 @@
 #include "engine.h"
 #include "board.h"
 #include "evaluate.h"
-
+#include "debug.h"
 
 Move Engine::search(){
 
     startTime = std::chrono::steady_clock::now();
-    game.board.isAdversaryWhite = !game.board.state.whiteToMove;
+    // enginePlaysWhite is set in setPosition() based on initial position
     
     setTimeToThink();
     
     Colours activeColour = (Colours)game.board.state.whiteToMove;
 
-    Move overallBestMove = {} ;
+    Move overallBestMove = {true};
     nodesVisited = 0; // Reset nodes at the start of a search
 
     int maxDepth = (game.info.depth == -1) ? 40 : game.info.depth;
@@ -39,10 +39,15 @@ Move Engine::search(){
             return {}; 
         }
 
+        if(!overallBestMove.nullMove) moves.setBestMove(overallBestMove);
+
         int bestScore = -999999999;
         Move bestMoveFromRoot = moves.moves[0];
 
-        for(auto &move : moves){
+        for(int i = 0; i < moves.count; i++){
+
+            moves.sortNext(i);
+            Move move = moves.moves[i];
             game.board.makeMove(move);
             int eval = -negamax(currentDepth-1, -beta, -alpha, game.ply + 1);
             game.board.unmakeMove(move);
@@ -62,18 +67,8 @@ Move Engine::search(){
 
         overallBestMove = bestMoveFromRoot;
 
-        auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-        long long nps = (elapsed > 0) ? (nodesVisited * 1000 / elapsed) : 0;
-
-        std::stringstream info;
-        info << "info depth " << currentDepth 
-             << " score cp " << bestScore
-             << " nodes " << nodesVisited
-             << " nps " << nps
-             << " pv " << convertMoveToAlgebraicNotation(overallBestMove);
-        
-        log_uci(info.str(), uci_mutex);
+        int absoluteEval = game.board.state.whiteToMove ? bestScore : -bestScore;
+        log_uci(currentDepth, absoluteEval, nodesVisited, overallBestMove, startTime, uci_mutex);
 
 
         //Found a forced mate, no point trying to find the best move
@@ -84,26 +79,6 @@ Move Engine::search(){
     return overallBestMove;
 
 }
-
-void Engine::writeBestMove(){
-    std::ofstream df("engine_log.txt", std::ios::app);
-    df << "--- Thread Active ---" << std::endl;
-
-    log_uci("info string Chessir is calculating...", uci_mutex);
-
-    Move bestMove = search(); 
-    std::string moveStr = convertMoveToAlgebraicNotation(bestMove);
-
-    df << "Search finished. Resulting Move: [" << moveStr << "]" << std::endl;
-
-    if (!moveStr.empty()) {
-        log_uci("bestmove " + moveStr, uci_mutex);
-    }
-
-    df << "Confirmed sent to GUI: bestmove " << moveStr << std::endl;
-    df.close();
-}
-
 int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
     
     TTEntry stored;
@@ -127,11 +102,7 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
     if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
     
         
-    if(maxDepth == 0) {
-        setFullEval(game.board);
-        
-        return game.board.eval;
-    }
+    if(maxDepth == 0) return game.board.eval;
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = -999999;
@@ -154,8 +125,11 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
     //Check for special draws
     if(game.isDraw()) return 0;
 
-    for(auto &move : moves){
-       
+    for(int i = 0; i < moves.count; i++){
+        
+        moves.sortNext(i);
+        Move move = moves.moves[i];
+
         game.board.makeMove(move);
 
         int eval = -negamax(maxDepth-1,-beta,-alpha,ply+1);
@@ -192,6 +166,26 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
 }
 
 
+void Engine::writeBestMove(){
+    std::ofstream df("engine_log.txt", std::ios::app);
+    df << "--- Thread Active ---" << std::endl;
+
+    log_uci("info string Chessir is calculating...", uci_mutex);
+
+    Move bestMove = search(); 
+    std::string moveStr = convertMoveToAlgebraicNotation(bestMove);
+
+    df << "Search finished. Resulting Move: [" << moveStr << "]" << std::endl;
+
+    if (!moveStr.empty()) {
+        log_uci("bestmove " + moveStr, uci_mutex);
+    }
+
+    df << "Confirmed sent to GUI: bestmove " << moveStr << std::endl;
+    df.close();
+}
+
+
 bool Engine::abortSearch(){
      
     if(stopRequested) return true;
@@ -208,8 +202,8 @@ void Engine::setTimeToThink(){
 
     //Check if we have used our quota of time for this search
     
-    int myTime = game.board.isAdversaryWhite ? game.info.wtime : game.info.btime;
-    int myInc  = game.board.isAdversaryWhite ? game.info.winc  : game.info.binc;
+    int myTime = game.board.enginePlaysWhite ? game.info.wtime : game.info.btime;
+    int myInc  = game.board.enginePlaysWhite ? game.info.winc  : game.info.binc;
 
     if (game.info.movetime != -1) {
         // EXACT time per move

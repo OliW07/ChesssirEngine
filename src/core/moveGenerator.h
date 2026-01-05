@@ -18,9 +18,9 @@ struct MoveList {
         }
     }
 
-    inline void setBestMove(const Move bestMove){
+    inline void setBestMove(const Move &bestMove){
 
-        for(int i = 1; i < count; i++){
+        for(int i = 0; i < count; i++){
             if(moves[i] == bestMove){
                 moves[i].orderScore = 100000;
                 break;
@@ -41,6 +41,7 @@ struct MoveList {
         // Swap the best one found into the current slot
         std::swap(moves[currentIdx], moves[bestIndex]);
     }
+
 
     Move *begin() { 
         return moves;
@@ -71,4 +72,5 @@ class MoveGenerator {
 };
 
 
+void setCaptureScore(Move &move, Board &board);
 #endif

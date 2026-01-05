@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "moveGenerator.h"
 #include "attackHandler.h"
+#include "evaluate.h"
 
 using namespace precomputedData;
 
@@ -268,6 +269,9 @@ MoveList MoveGenerator::getAllMoves(){
             move.to = __builtin_ctzll(legalMoves);
             legalMoves &= (legalMoves - 1);
             moves.add(move);
+
+            setCaptureScore(move,game.board);
+            
         }
 
         while(promotionMoves){
@@ -279,6 +283,8 @@ MoveList MoveGenerator::getAllMoves(){
 
                 move.promotionPiece = promotionPiece;
                 moves.add(move);
+
+                setCaptureScore(move,game.board);
             }
             
         }
@@ -287,5 +293,16 @@ MoveList MoveGenerator::getAllMoves(){
 
     return moves;
 }
+
+
+void setCaptureScore(Move &move, Board &board){
+
+    if(board.state.mailBox[move.to] != 0) {
+        int victimValue = PieceValues[board.getPieceEnum(move.to)];
+        int attackerValue = PieceValues[board.getPieceEnum(move.from)];
+        move.orderScore = victimValue * 10 - attackerValue;
+    }
+}
+
 
 

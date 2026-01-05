@@ -51,13 +51,6 @@ Move convertAlgebraicNotationToMove(const std::string &notation){
             } 
             
 
-            std::vector<int> moves = {
-                convertNotationToInt(from),
-                convertNotationToInt(to),
-                static_cast<int>(promotionPiece)
-                
-            };
-
             move.to = convertNotationToInt(to);
             move.from = convertNotationToInt(from);
             move.promotionPiece = promotionPiece;
