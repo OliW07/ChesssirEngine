@@ -66,8 +66,8 @@ INSTANTIATE_TEST_SUITE_P(
     EvalTestFixture,
     ::testing::Values(
         Position{"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", "e2a6 c7c5", PieceValues[Bishop]},
-        Position{"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", "e2a6 c7c5 d5c6", -430},
-        Position{"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", "e2a6 c7c5 d5c6 a8b8 c6c7 f6e4 c7b8q", -1630},
+        Position{"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", "e2a6 c7c5 d5c6", 430},
+        Position{"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", "e2a6 c7c5 d5c6 a8b8 c6c7 f6e4 c7b8q", 1630},
         Position{STARTING_FEN,"",0},
         Position{"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -","", 0}
 
