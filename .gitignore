@@ -43,6 +43,8 @@ Thumbs.db
 *.temp
 *~
 
+# Engine Logs
+*.txt
 
 .cache/
 compile_commands.json
