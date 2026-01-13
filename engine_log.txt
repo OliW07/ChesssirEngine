@@ -1,2 +1,0 @@
---- Engine Started ---
-Received: position rnb1kb1r/pp1n3p/6p1/8/8/5B2/P1PP1PqP/1RBQK1NR b - - 0 1\ngo depth 5\nquit
