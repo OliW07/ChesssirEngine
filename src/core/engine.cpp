@@ -23,60 +23,35 @@ Move Engine::search(){
     
     Colours activeColour = (Colours)game.board.state.whiteToMove;
 
-    Move overallBestMove = {true};
-    nodesVisited = 0; // Reset nodes at the start of a search
+    nodesVisited = 0; 
 
     int maxDepth = (game.info.depth == -1) ? 40 : game.info.depth;
 
     int alpha = -999999999,
-    beta  =  999999999;
+        beta  =  999999999;
 
-    for(int currentDepth = 1; currentDepth <= maxDepth; currentDepth++){
+    TTEntry entry;
 
-        MoveList moves = game.moveGenerator.getAllMoves();
-        if (moves.count == 0) {
-            overallBestMove = {}; // Return a null move if there are no legal moves
-            return {}; 
-        }
+    for(int currentDepth = 1; (currentDepth <= maxDepth) && !abortSearch(); currentDepth++){
 
-        if(!overallBestMove.nullMove) moves.setBestMove(overallBestMove);
 
-        int bestScore = -999999999;
-        Move bestMoveFromRoot = moves.moves[0];
+        int eval = -negamax(currentDepth, alpha, beta, game.ply + 1);
 
-        for(int i = 0; i < moves.count; i++){
 
-            moves.sortNext(i);
-            Move move = moves.moves[i];
-            game.board.makeMove(move);
-            int eval = -negamax(currentDepth-1, -beta, -alpha, game.ply + 1);
-            game.board.unmakeMove(move);
-            
-            
-            
-            if(eval > bestScore){
-                bestScore = eval;
-                bestMoveFromRoot = move;
-            }
-            
-            alpha = std::max(alpha, eval);
-            if(alpha >= beta) break;
-        }
+        //Write the current depth search to the entry
+        bool foundInTT = tt.probe(game.board.state.zhash,entry);
 
-        if(abortSearch()) break;
-
-        overallBestMove = bestMoveFromRoot;
-
-        int absoluteEval = game.board.state.whiteToMove ? bestScore : -bestScore;
-        log_uci(currentDepth, absoluteEval, nodesVisited, overallBestMove, startTime, uci_mutex);
+        int absoluteEval = game.board.state.whiteToMove ? entry.eval : -entry.eval;
+        log_uci(currentDepth, absoluteEval, nodesVisited, unpackMove(entry.bestMove), startTime, uci_mutex);
 
 
         //Found a forced mate, no point trying to find the best move
-        if(std::abs(bestScore) > MATESCORE - 1000) break;
+        if(std::abs(eval) > MATESCORE - 1000) break;
 
     }
-   
-    return overallBestMove;
+
+    //The deepest search that finished was the last to write to the TT
+    return unpackMove(entry.bestMove);
 
 }
 int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
@@ -101,14 +76,14 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
 
     if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
     
-        
-    if(maxDepth == 0) return game.board.eval;
+    if(maxDepth == 0) return game.board.state.whiteToMove ? game.board.eval : -game.board.eval;
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = -999999;
     int alphaOrig = alpha;
     Move bestMoveThisNode = {};
- 
+    NodeType type = NodeType::Exact;
+
     MoveList moves = game.moveGenerator.getAllMoves();
 
     //If the stored best move is not null
@@ -142,8 +117,8 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
         }
 
         if(eval >= beta){
-            tt.write(game.board.state.zhash, maxDepth, ply, eval, move, NodeType::Lowerbound);
-            return beta;
+            type = NodeType::Lowerbound;
+            break;
         }
 
         if(eval > alpha){
@@ -157,7 +132,6 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
 
 
     //Update TT with searched results
-    NodeType type = NodeType::Exact;
     if(bestScore <= alphaOrig) type = NodeType::Upperbound;
 
     tt.write(game.board.state.zhash,maxDepth,ply,scoreToStore,bestMoveThisNode,type);
