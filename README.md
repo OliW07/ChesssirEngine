@@ -60,6 +60,23 @@ Performance is measured with a combination of Nodes Per Second (NPS) and total n
 
 --- 
 
+## Verification & Correctness
+
+To ensure the integrity of the move generation in all types of positions, the engine is validated against the standardized **Perft** (Performance Test) benchmarks. This is a test that verifies the number of leaf nodes that can be reached from a given depth, which can be verified against known, correct values.
+
+### Perft Results (Standard Start Position)
+
+| Depth | Result (Chessir) | Expected | Status |
+| :--- | :--- | :--- | :---
+| 1 | 20 | 20 | ✅ |
+|2 | 400 | 400 | ✅ |
+| 3 | 8902 | 8902 | ✅ |
+|4 | 197281 | 197281 |  ✅|
+|5 | 4865609 |4865609 | ✅|
+
+> **Full verification**: I utilized a suite of "tricky" test positions from [The Chess Programming Wiki](https://www.chessprogramming.org/Perft_Results) at high depths to validate complex edge cases such as en passant, promotions, and castling.
+
+
 ## Upcoming
 - **Magic bitboards**: Implementing faster sliding piece move generation
 - **Lock free parallel search** using C++20 thread for mulit-core high performance
