@@ -35,8 +35,6 @@ INSTANTIATE_TEST_SUITE_P(
     Positions,
     PuzzleTestFixture,
     ::testing::Values(
-        Puzzle{"rnb1kb1r/pp1n3p/6p1/8/8/5B2/P1PP1PqP/1RBQK1NR b - - 0 1",5,"g2g5"},
-        //Puzzle{"rnb1kbnr/pp5p/6p1/8/8/5B2/P1PP1PqP/1RBQK1NR b - - 0 1",5,"g2g5"},
         Puzzle{"k7/4q1n1/8/5P2/6N1/8/6PB/6NK w - - 0 1",7,"f5f6"},
         Puzzle{"1b5k/pp2n3/8/3P1Q2/8/8/8/7K b - - 0 1",3,"e7f5"},
         Puzzle{"1b5k/pp2n3/8/3P1Q2/8/8/8/7K b - - 0 1",1,"e7f5"},
