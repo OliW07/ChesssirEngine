@@ -1,5 +1,5 @@
 # Chessir
-### High Peformance C++20 Chess Engine
+### High Performance C++20 Chess Engine
 
 A UCI compatible chess engine built with a focus on low latency algorithms with a modern, sleek design. 
 
