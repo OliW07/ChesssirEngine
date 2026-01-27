@@ -88,6 +88,50 @@ Some of my top resources for learning C++ include (https://www.learncpp.com/) fo
 
 The core chess engine and algorithmic implementation of this project is entirely original, with no AI assistance. However claude.ai was used to generate initial templates for  the `.gitignore` and `CMakeLists.txt` to save time. Furthermore, Command-line-interface AI has been used in this project to give a unqiue evaluation to key design decisions and help to address code quality. I found this useful to get another perspective to challenge my ideas during this process, however as the project developed I rapidly found that AI tools in general were not providing quality answers/insights due to the high complexity and unique style of development for this project. Due to AI tools progressively hallucinating more, and requiring a large amount of correcting and direction from me (defeating the purpose) these tools were phased out as development processes, and replaced with more detailed testing to ensure a bug-free project. Google's AI Overview in search was also utilised for syntax searches, significantly reducing time to search official docs or stackoverflow for simple language-specific queries.
 
+## Building
+
+### Requirements
+- CMake 3.10+
+- C++20 compiler (GCC 10+, Clang 10+, or MSVC 2019+)
+
+### Quick Start
+
+**Linux/macOS:**
+```bash
+mkdir build && cd build
+cmake ..
+make -j
+./chess_engine
+```
+
+**Windows (Visual Studio):**
+```bash
+mkdir build && cd build
+cmake ..
+cmake --build . --config Release
+Release\chess_engine.exe
+```
+
+**Windows (MinGW):**
+```bash
+mkdir build && cd build
+cmake -G "MinGW Makefiles" ..
+cmake --build .
+chess_engine.exe
+```
+
+**Run tests:**
+```bash
+cd build
+ctest --output-on-failure
+```
+
+Windows (Visual Studio) requires specifying the config:
+```bash
+cd build
+ctest -C Release --output-on-failure
+```
+
 ## Upcoming
 - **Magic bitboards**: Implementing faster sliding piece move generation
 - **Lock free parallel search** using C++20 thread for multi-core high performance
