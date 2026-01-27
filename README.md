@@ -1,10 +1,10 @@
-# Chessir
-### High Peformance C++20 Chess Engine
+# Chesssir
+### High Performance C++20 Chess Engine
 
 A UCI compatible chess engine built with a focus on low latency algorithms with a modern, sleek design. 
 
 ---
-
+> Self-taught C++20 in 3 months | Nov 2025 - Jan 2026
 ## Features
 
 - **Bitboard board representation** ultra fast move generation with O(1) hardware accelerated bitwise operations.
