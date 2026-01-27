@@ -5,9 +5,10 @@
 #include "attackHandler.h"
 #include "precompute.h"
 #include "board.h"
-
+#include "utils/bitops.h"
 
 using namespace precomputedData;
+using namespace ChessEngine::Utils;
 
 
 uint64_t AttackHandler::getAttacks(const int pos){
@@ -111,7 +112,7 @@ uint64_t AttackHandler::getAllAttacks(bool isWhite){
     
     while(pieceBitBoard){
 
-	int location = __builtin_ctzll(pieceBitBoard);
+	int location = ctz64(pieceBitBoard);
 	pieceBitBoard &= (pieceBitBoard-1);
 
         attacks |= getAttacks(location);
@@ -186,7 +187,7 @@ uint64_t AttackHandler::pawnControlledSquare(bool controllingColourIsWhite){
     uint64_t controlledSquares = 0ULL;
     
     while(pawnBitBoard){
-        int pawnPos = __builtin_ctzll(pawnBitBoard);
+        int pawnPos = ctz64(pawnBitBoard);
         controlledSquares |= pawnAttacks[pawnPos];
         pawnBitBoard ^= (1ULL << pawnPos);
     }

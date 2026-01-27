@@ -3,6 +3,9 @@
 
 #include <Types.h>
 #include <memory>
+#include "utils/bitops.h"
+
+using namespace ChessEngine::Utils;
 
 enum class NodeType : uint8_t {Exact, Upperbound, Lowerbound};
 
@@ -33,7 +36,7 @@ public:
         int maxEntries = SIZE_MB * 1024 * 1024 / sizeof(TTEntry);
         
         //Round size down to powers of 2 for quick operations
-        maxEntries = 1ULL << (63 - __builtin_clzll(maxEntries));
+        maxEntries = 1ULL << (63 - clz64(maxEntries));
         mask = maxEntries - 1;
         entries = std::make_unique_for_overwrite<TTEntry[]>(maxEntries);
     }

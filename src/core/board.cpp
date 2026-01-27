@@ -13,8 +13,10 @@
 #include "utils/Types.h"
 #include "debug.h"
 #include "zobrist.h"
+#include "utils/bitops.h"
 
 using namespace precomputedData;
+using namespace ChessEngine::Utils;
 
 
 void Board::init(){
@@ -27,7 +29,7 @@ uint64_t Board::getFriendlyPieces(int pos){
 }
 
 uint64_t Board::getKingLocation(bool isWhite){
-    return isWhite ? __builtin_ctzll(state.bitboards[White][King]) : __builtin_ctzll(state.bitboards[Black][King]);
+    return isWhite ? ctz64(state.bitboards[White][King]) : ctz64(state.bitboards[Black][King]);
 }
 
 uint64_t Board::getEnemyPieces(int pos){
@@ -99,9 +101,9 @@ int Board::getFirstBlocker(int pos, RaysDirection direction){
 
     if(!blockers) return -1; 
 
-    if(direction == North || direction == East || direction == NorthEast || direction == NorthWest) return __builtin_ctzll(blockers);
+    if(direction == North || direction == East || direction == NorthEast || direction == NorthWest) return ctz64(blockers);
          
-    return 63 - __builtin_clzll(blockers);
+    return 63 - clz64(blockers);
     
 }
 
@@ -181,8 +183,8 @@ bool Game::isInsufficientMaterial(){
         }
         
         if (whiteBishops == 1 && blackBishops == 1) {
-            int whiteBLoc = __builtin_ctzll(board.state.bitboards[White][Bishop]);
-            int blackBLoc = __builtin_ctzll(board.state.bitboards[Black][Bishop]);
+            int whiteBLoc = ctz64(board.state.bitboards[White][Bishop]);
+            int blackBLoc = ctz64(board.state.bitboards[Black][Bishop]);
 
             bool whiteBColor = getSquareColour(whiteBLoc); 
             bool blackBColor = getSquareColour(blackBLoc);

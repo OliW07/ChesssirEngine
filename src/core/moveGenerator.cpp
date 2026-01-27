@@ -8,8 +8,10 @@
 #include "moveGenerator.h"
 #include "attackHandler.h"
 #include "evaluate.h"
+#include "utils/bitops.h"
 
 using namespace precomputedData;
+using namespace ChessEngine::Utils;
 
 
 
@@ -93,7 +95,7 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves){
 
         while(movesClone){
 
-            int move = __builtin_ctzll(movesClone);
+            int move = ctz64(movesClone);
             movesClone &= (movesClone - 1);
 
             if(game.attackHandler.isSquareAttacked(move,!isWhite)) legalMoves ^= (1ULL << move);  
@@ -111,7 +113,7 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves){
         while(attackers){
 
 
-            int attackerLoc = __builtin_ctzll(attackers);
+            int attackerLoc = ctz64(attackers);
             attackers &= (attackers-1);
 
             enum Pieces attackerType = (Pieces)game.board.getPieceEnum(attackerLoc);
@@ -135,7 +137,7 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves){
         //If the king is attacked more than once, the king is the only piece that can move;
         if(countOnes(attackers) > 1) return 0ULL;
 
-        int attackerLocation = __builtin_ctzll(attackers);
+        int attackerLocation = ctz64(attackers);
 
 	
         uint64_t blockingCapturingRay;
@@ -176,7 +178,7 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves){
         uint64_t movesClone = legalMoves;
 
         while(movesClone){
-            int move = __builtin_ctzll(movesClone);
+            int move = ctz64(movesClone);
             movesClone &= (movesClone - 1);
 
             
@@ -266,7 +268,7 @@ MoveList MoveGenerator::getAllMoves(){
         
         while(legalMoves)  {
             
-            move.to = __builtin_ctzll(legalMoves);
+            move.to = ctz64(legalMoves);
             legalMoves &= (legalMoves - 1);
             moves.add(move);
 
@@ -276,7 +278,7 @@ MoveList MoveGenerator::getAllMoves(){
 
         while(promotionMoves){
             
-            move.to = __builtin_ctzll(promotionMoves);
+            move.to = ctz64(promotionMoves);
             promotionMoves &= (promotionMoves - 1);
 
             for(Pieces promotionPiece : {Rook,Knight,Bishop,Queen}){

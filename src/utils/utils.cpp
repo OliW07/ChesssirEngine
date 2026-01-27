@@ -4,6 +4,9 @@
 
 
 #include "utils/Types.h"
+#include "utils/bitops.h"
+
+using namespace ChessEngine::Utils;
 
 
 
@@ -28,7 +31,7 @@ int convertLocationToRows(const int location){
 }
 
 int countOnes(uint64_t state){
-    return __builtin_popcountll(state);
+    return popcount64(state);
 }
 
 
@@ -113,7 +116,7 @@ std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard){
     std::vector<int> locations = {};
     while(bitBoard){
         
-        int location = __builtin_ctzll(bitBoard);
+        int location = ctz64(bitBoard);
         locations.push_back(location);
 
         //Toggle the bit off
@@ -188,7 +191,7 @@ int convertLocationToColumns(const int location){
 
 bool onlyOnePiece(uint64_t state){
     if(state == 0) return false;
-    return (__builtin_ctzll(state) + __builtin_clzll(state) == 63);
+    return (ctz64(state) + clz64(state) == 63);
 }
 
 bool posInBounds(int pos){
