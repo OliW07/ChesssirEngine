@@ -96,6 +96,12 @@ The core chess engine and algorithmic implementation of this project is entirely
 
 ### Quick Start
 
+Clone the repo:
+```bash
+git clone https://github.com/OliW07/ChesssirEngine.git
+cd ChesssirEngine
+```
+
 **Linux/macOS:**
 ```bash
 mkdir build && cd build
