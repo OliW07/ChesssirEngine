@@ -5,7 +5,7 @@
 #include <atomic>
 #include <mutex>
 
-#include "tranpositionTable.h"
+#include "transpositionTable.h"
 #include "utils/Types.h"
 
 

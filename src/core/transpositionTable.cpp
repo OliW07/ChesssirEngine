@@ -1,4 +1,4 @@
-#include "tranpositionTable.h"
+#include "transpositionTable.h"
 
 uint16_t packMove(const Move& m) {
    return (uint16_t)m.from | 

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <tranpositionTable.h>
+#include <transpositionTable.h>
 
 class TTTest : public ::testing::Test{
 protected:

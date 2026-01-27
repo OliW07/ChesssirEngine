@@ -6,7 +6,6 @@
 #include <sstream>
 
 #include "moveGenerator.h"
-#include "tranpositionTable.h"
 #include "utils/Types.h"
 #include "utils/log.h"
 #include "engine.h"
