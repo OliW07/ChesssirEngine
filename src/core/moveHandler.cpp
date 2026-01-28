@@ -2,6 +2,7 @@
 #include "board.h"
 #include "zobrist.h"
 #include "evaluate.h"
+#include "precompute.h"
 
 #include <cstdint>
 #include <iostream>
@@ -51,6 +52,9 @@ void Board::makeMove(Move move){
 
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.to];
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.from];
+
+    eval += evaluatePieceSquare(pieceType, move.to, isWhite, false);
+    eval -= evaluatePieceSquare(pieceType, move.from, isWhite, false);
 
 
     if(pieceType == Pawn){
@@ -124,6 +128,10 @@ void Board::unmakeMove(Move move){
 
         eval -= isWhite ? PieceValues[promotionType] : -PieceValues[promotionType];
         eval += isWhite ? PieceValues[Pawn] : -PieceValues[Pawn];
+
+        eval -= evaluatePieceSquare(promotionType, move.to, isWhite, false);
+        //Add back on where the pawn is, as later this will be subtracted, which is incorrect for pawn promotions
+        eval += evaluatePieceSquare(Pawn, move.to, isWhite, false);
     
         
     }
@@ -165,6 +173,9 @@ void Board::unmakeMove(Move move){
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.to];
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.from];
 
+    eval += evaluatePieceSquare(pieceType, move.from, isWhite, false);
+    eval -= evaluatePieceSquare(pieceType, move.to, isWhite, false);
+
     if(restored.enPassantCapture){
         int capturedPawnPos = isWhite ? move.to - 8 : move.to + 8;
 
@@ -174,6 +185,8 @@ void Board::unmakeMove(Move move){
         *capturedBitBoard ^= pawnMask;
 
         eval -= (isWhite ? PieceValues[Pawn] : -PieceValues[Pawn]);
+
+        eval += evaluatePieceSquare(Pawn, capturedPawnPos, !isWhite, false);
         
         state.occupancy[!isWhite] ^= pawnMask;
         state.occupancy[Both] ^= pawnMask;
@@ -200,6 +213,8 @@ void Board::unmakeMove(Move move){
         state.pieceList.addPiece(move.to, (Colours)!isWhite);
 
         eval -= (isWhite ? PieceValues[restored.capturedPiece] : -PieceValues[restored.capturedPiece]);
+        eval += evaluatePieceSquare(restored.capturedPiece, move.to, !isWhite, false);
+
     }
 
 
@@ -238,6 +253,7 @@ void Board::handleCapture(int from, int to,bool isWhite){
 
     //Caputuring an enemy piece increases your sides eval
     eval += (isWhite ? PieceValues[capturedPiece] : -PieceValues[capturedPiece]);
+    eval -= evaluatePieceSquare(capturedPiece, to, !isWhite, false);
     
     uint64_t *capturedBitBoard = getBitBoardFromPiece(capturedPiece,!isWhite);
     uint64_t capturedMask = (1ULL << to);
@@ -264,6 +280,7 @@ void Board::handleEnpassant(int from, int to, bool isWhite){
     uint64_t captureMask = 1ULL << capturePos;
 
     eval += isWhite ? PieceValues[Pawn] : -PieceValues[Pawn];
+    eval -= evaluatePieceSquare(Pawn,capturePos, !isWhite, false);
 
     *capturedBitBoard ^= captureMask;
     state.occupancy[!isWhite] ^= captureMask;
@@ -343,6 +360,13 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
             eval += isWhite ? PieceValues[promotionPiece] : -PieceValues[promotionPiece];
             eval -= isWhite ? PieceValues[Pawn] : -PieceValues[Pawn];
 
+            eval += evaluatePieceSquare(promotionPiece, to, isWhite, false);
+            //Minus where pawn was going to, because the main make move will auto add it
+            eval -= evaluatePieceSquare(Pawn, to, isWhite, false);
+
+
+
+
             //Dont need to change piecelist as the location of the promotion piece is the same as where the pawn just moved to.
             
             history[historyIndex].promotion = true;
@@ -352,154 +376,130 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
 
 
 void Board::handleRookCastle(int newKingLoc){
+
+    Colours rookColour;
+    int to;
+    int from;
     
     switch(newKingLoc){
         case(2):
-            {uint64_t rookMoveMask = (1ULL << 0) | (1ULL << 3);
-            state.bitboards[White][Rook] ^= rookMoveMask;
 
-            state.occupancy[White] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
-            
-            state.mailBox[3] = int(Rook);
-            state.mailBox[0] = 0;}
-
-            state.zhash ^= (Zobrist.pieceKeys[White][Rook][0] ^ Zobrist.pieceKeys[White][Rook][3]);
-
-            state.pieceList.movePiece(3,0,White);
+            rookColour = White;
+            to = 3;
+            from = 0;
 
             break;
+
         case(6):
-            {uint64_t rookMoveMask = (1ULL << 5) | (1ULL << 7);
-            state.bitboards[White][Rook] ^= rookMoveMask;
 
-            state.occupancy[White] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
-
-            state.mailBox[5] = int(Rook);
-            state.mailBox[7] = 0;}
-
-            state.zhash ^= (Zobrist.pieceKeys[White][Rook][5] ^ Zobrist.pieceKeys[White][Rook][7]);
-
-            state.pieceList.movePiece(5,7,White);
+            rookColour = White;
+            to = 5;
+            from = 7;
 
             break;
+
         case(58):
-            {uint64_t rookMoveMask = (1ULL << 56) | (1ULL << 59);
-            
-            state.bitboards[Black][Rook] ^= rookMoveMask;
-            
-            state.occupancy[Black] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
 
-            state.mailBox[59] = int(Rook) + 8;
-            state.mailBox[56] = 0;}
+            rookColour = Black;
+            to = 59;
+            from = 56;
 
-            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][56] ^ Zobrist.pieceKeys[Black][Rook][59]);
+           break;
 
-            state.pieceList.movePiece(59,56,Black);
-
-            break;
         case(62):
-            {uint64_t rookMoveMask = (1ULL << 61) | (1ULL << 63);
 
-            state.bitboards[Black][Rook] ^= rookMoveMask;
-
-            state.occupancy[Black] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
-
-            state.mailBox[61] = int(Rook) + 8;
-            state.mailBox[63] = 0;}
-
-            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][61] ^ Zobrist.pieceKeys[Black][Rook][63]);
-
-            state.pieceList.movePiece(61,63,Black);
+            rookColour = Black;
+            to = 61;
+            from = 63;
 
             break;
             
         default:
             std::runtime_error("Error, the king is making an illegal move");
+
+
     }
+
+    uint64_t rookMoveMask = (1ULL << from) | (1ULL << to);
+    state.bitboards[rookColour][Rook] ^= rookMoveMask;
+
+    state.occupancy[rookColour] ^= rookMoveMask;
+    state.occupancy[Both] ^= rookMoveMask;
+    state.bitboards[Both][Rook] ^= rookMoveMask;
+    
+    state.mailBox[to] = rookColour == White ? int(Rook) : int(Rook) + 8;
+    state.mailBox[from] = 0;
+
+    state.zhash ^= (Zobrist.pieceKeys[rookColour][Rook][from] ^ Zobrist.pieceKeys[rookColour][Rook][to]);
+
+    state.pieceList.movePiece(to,from,rookColour);
+
+    eval += evaluatePieceSquare(Rook, to, rookColour == White, false);
+    eval -= evaluatePieceSquare(Rook, from, rookColour == White, false);
+
+
 }
 
 void Board::unmakeRookCastle(Move move){
 
+    Colours rookColour;
+    int to;
+    int from;
+
     switch(move.to){
         case(2):
-            {uint64_t rookMoveMask = (1ULL << 0) | (1ULL << 3);
-            state.bitboards[White][Rook] ^= rookMoveMask;
 
-            state.occupancy[White] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
-            
-            state.mailBox[0] = int(Rook);
-            state.mailBox[3] = 0;}
-
-            state.zhash ^= (Zobrist.pieceKeys[White][Rook][0] ^ Zobrist.pieceKeys[White][Rook][3]);
-
-            state.pieceList.movePiece(0,3,White);
+            rookColour = White;
+            to = 0;
+            from = 3;
 
             break;
+
         case(6):
-            {uint64_t rookMoveMask = (1ULL << 5) | (1ULL << 7);
-            state.bitboards[White][Rook] ^= rookMoveMask;
 
-            state.occupancy[White] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
-
-            state.mailBox[7] = int(Rook);
-            state.mailBox[5] = 0;}
-
-            state.zhash ^= (Zobrist.pieceKeys[White][Rook][5] ^ Zobrist.pieceKeys[White][Rook][7]);
-
-
-            state.pieceList.movePiece(7,5,White);
+            rookColour = White;
+            to = 7;
+            from = 5;
 
             break;
+
         case(58):
-            {uint64_t rookMoveMask = (1ULL << 56) | (1ULL << 59);
-            
-            state.bitboards[Black][Rook] ^= rookMoveMask;
-            
-            state.occupancy[Black] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
 
-            state.mailBox[56] = int(Rook) + 8;
-            state.mailBox[59] = 0;}
+            rookColour = Black;
+            to = 56;
+            from = 59;
 
-            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][56] ^ Zobrist.pieceKeys[Black][Rook][59]);
+           break;
 
-            state.pieceList.movePiece(56,59,Black);
-
-            break;
         case(62):
-            {uint64_t rookMoveMask = (1ULL << 61) | (1ULL << 63);
 
-            state.bitboards[Black][Rook] ^= rookMoveMask;
-
-            state.occupancy[Black] ^= rookMoveMask;
-            state.occupancy[Both] ^= rookMoveMask;
-            state.bitboards[Both][Rook] ^= rookMoveMask;
-
-            state.mailBox[63] = int(Rook) + 8;
-            state.mailBox[61] = 0;}
-
-            state.zhash ^= (Zobrist.pieceKeys[Black][Rook][61] ^ Zobrist.pieceKeys[Black][Rook][63]);
-
-            state.pieceList.movePiece(63,61,Black);
+            rookColour = Black;
+            to = 63;
+            from = 61;
 
             break;
             
         default:
             std::runtime_error("Error, the king is making an illegal move");
     }
+
+    uint64_t rookMoveMask = (1ULL << to) | (1ULL << from);
+            
+    state.bitboards[rookColour][Rook] ^= rookMoveMask;
+    
+    state.occupancy[rookColour] ^= rookMoveMask;
+    state.occupancy[Both] ^= rookMoveMask;
+    state.bitboards[Both][rookColour] ^= rookMoveMask;
+
+    state.mailBox[to] = rookColour == White ? int(Rook) : int(Rook) + 8;
+    state.mailBox[from] = 0;
+
+    state.zhash ^= (Zobrist.pieceKeys[rookColour][Rook][to] ^ Zobrist.pieceKeys[rookColour][Rook][from]);
+
+    state.pieceList.movePiece(to,from,rookColour);
+
+    eval += evaluatePieceSquare(Rook, to, rookColour == White, false);
+    eval -= evaluatePieceSquare(Rook, from, rookColour == White, false);
 
 }
 
