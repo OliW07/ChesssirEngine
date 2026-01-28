@@ -1,4 +1,9 @@
 # Chesssir
+
+[![Build Status](https://github.com/OliW07/ChesssirEngine/actions/workflows/build.yml/badge.svg)](https://github.com/OliW07/ChesssirEngine/actions/workflows/build.yml)
+![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
+
 ### High Performance C++20 Chess Engine
 
 A UCI compatible chess engine built with a focus on low latency algorithms with a modern, sleek design. 
@@ -31,13 +36,15 @@ A UCI compatible chess engine built with a focus on low latency algorithms with 
     1  [ 0  0  0  0  0  0  0  0 ]
         a  b  c  d  e  f  g  h
     ```
-     - Drawbacks of the sole bitboard approach include requiring O(n) to search through bits to find the exact locations of pieces, which is essential to move generation (think `for each piece do`), which is why, additionally, the use of [Piece Lists](https://www.chessprogramming.org/Piece-Lists) and [Mailboxes](https://www.chessprogramming.org/Mailbox) are used for board representation. Although three simultaneous representations seems overkill, updating each only ever requires a single operation, and the combination of the three allows any operation/query to <u> always run in constant time </u>
-
+     - Drawbacks of the sole bitboard approach include requiring O(n) operations to search through bits to find the exact locations of pieces, which is essential to move generation (think `for each piece do`), which is why, additionally, the use of [Piece Lists](https://www.chessprogramming.org/Piece-Lists) and [Mailboxes](https://www.chessprogramming.org/Mailbox) are used for board representation. Although three simultaneous representations seems overkill, updating each only ever requires a single operation, and the combination of the three allows any operation/query to <u> always run in constant time </u> this has the draw back of a higher memory usage on the stack, however performance, at the expense of memory is always warranted in a high performance program. Usage example:
+         1. Checking whether a square is occupied is now O(1) with the mailbox array; the index of the square directly maps to the piece.
+       2.  Iterating each piece is O(pieces) with the piece list, as the fixed-sized array stores each piece currently in the game. As an added performance benefit, the piece list is continuous in memory, and can be padded to each 64-byte cache line as the maximum possible number of pieces on a board can be stored with 56 bytes (allowing for null pieces). Another 8-byte memory trade-off per board state, however, drastically reducing cache misses by looping through each piece is an essential performance boost at high depth searches, so this is definitely warranted.
+           
 2. **State Management: Zobrist Hashing** 
 To handle hashing positions to be stored in the Transposition Table, Zobrist Hashing was implemented, where for each piece, a `uint64_t` is randomly allocated and then XORed together.
-- Efficiency: Instead of re-hashing the full board after each move, O(n), the nature of the Zobrist Hash allows a single XOR operation for an O(1) incremental update.
+- Efficiency: Instead of re-hashing the full board after each move, O(n), the nature of the Zobrist Hash allows a single XOR operation for an O(1) incremental update. This happens whenever a piece moves; we can update only that piece on the hash, instead of rehashing the entire position.
 - Impact: This allows the engine to recognise previously searched positions, and save time re-searching, resulting in an average increase of <u> 120% more nodes per second </u> even after the cost of probing the table.
-- Drawbacks: The number of possible chess positions is extremely large, much larger than could ever be used to index a hashmap, and a `uint64_t` cannot fully guarantee there are no hash collisions (when two completely different positions happen to give the same hash) however, at less than 10<sup>-6</sup>, this is statistically insigifcant and thus justifies the performance benefits.
+- Drawbacks: The number of possible chess positions is extremely large, much larger than could ever be used to index a hashmap, and a `uint64_t` cannot fully guarantee there are no hash collisions (when two completely different positions happen to give the same hash) however, at less than 10<sup>-6</sup>, this is statistically insigifcant and thus justifies the huge performance benefits.
 
 3. **Build system & Test-Driven Development**
 - Utilising CMake's build configuration ensure seemless building across platforms, and allows a clean, modularized code structure.
@@ -87,6 +94,56 @@ Some of my top resources for learning C++ include (https://www.learncpp.com/) fo
 ### AI usage disclaimer
 
 The core chess engine and algorithmic implementation of this project is entirely original, with no AI assistance. However claude.ai was used to generate initial templates for  the `.gitignore` and `CMakeLists.txt` to save time. Furthermore, Command-line-interface AI has been used in this project to give a unqiue evaluation to key design decisions and help to address code quality. I found this useful to get another perspective to challenge my ideas during this process, however as the project developed I rapidly found that AI tools in general were not providing quality answers/insights due to the high complexity and unique style of development for this project. Due to AI tools progressively hallucinating more, and requiring a large amount of correcting and direction from me (defeating the purpose) these tools were phased out as development processes, and replaced with more detailed testing to ensure a bug-free project. Google's AI Overview in search was also utilised for syntax searches, significantly reducing time to search official docs or stackoverflow for simple language-specific queries.
+
+## Building
+
+### Requirements
+- CMake 3.10+
+- C++20 compiler (GCC 10+, Clang 10+, or MSVC 2019+)
+
+### Quick Start
+
+Clone the repo:
+```bash
+git clone https://github.com/OliW07/ChesssirEngine.git
+cd ChesssirEngine
+```
+
+**Linux/macOS:**
+```bash
+mkdir build && cd build
+cmake ..
+make -j
+./chess_engine
+```
+
+**Windows (Visual Studio):**
+```bash
+mkdir build && cd build
+cmake ..
+cmake --build . --config Release
+Release\chess_engine.exe
+```
+
+**Windows (MinGW):**
+```bash
+mkdir build && cd build
+cmake -G "MinGW Makefiles" ..
+cmake --build .
+chess_engine.exe
+```
+
+**Run tests:**
+```bash
+cd build
+ctest --output-on-failure
+```
+
+Windows (Visual Studio) requires specifying the config:
+```bash
+cd build
+ctest -C Release --output-on-failure
+```
 
 ## Upcoming
 - **Magic bitboards**: Implementing faster sliding piece move generation
