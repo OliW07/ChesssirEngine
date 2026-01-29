@@ -55,6 +55,8 @@ Move Engine::search(){
 }
 int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
     
+    nodesVisited++;
+
     TTEntry stored;
     bool foundInTT = tt.probe(game.board.state.zhash,stored);
     if(foundInTT){
@@ -71,7 +73,6 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
             if(stored.type == NodeType::Upperbound && stored.eval <= alpha) return stored.eval;
         }
     }
-    nodesVisited++;
 
     if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
     

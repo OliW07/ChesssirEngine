@@ -71,7 +71,7 @@ class Game {
     
     public:
         Board board;
-        int ply;
+        int ply = 0;
         MoveGenerator moveGenerator;
         AttackHandler attackHandler;
         Engine chesssir;
