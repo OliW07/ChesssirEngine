@@ -166,8 +166,7 @@ chess_engine.exe
 
 **Run tests:**
 ```bash
-cd build
-ctest --output-on-failure
+ctest --test-dir build --output-on-failure
 ```
 
 Windows (Visual Studio) requires specifying the config:

@@ -78,5 +78,5 @@ target_link_libraries(chess_engine PRIVATE core)
 
 
     include(GoogleTest)
-    gtest_discover_tests(unit_test)
+    gtest_discover_tests(unit_tests)
   
