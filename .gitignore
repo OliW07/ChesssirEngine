@@ -37,6 +37,7 @@ Thumbs.db
 *.su
 *.idb
 *.pdb
+perf*
 
 # Temporary files
 *.tmp
