@@ -1,7 +1,9 @@
 #include "log.h"
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <print>
 
 
 void log_uci(const std::string &msg, std::mutex &uci_mutex){
@@ -19,8 +21,8 @@ void log_uci(const std::string &msg, std::mutex &uci_mutex){
 void log_uci(const int depth, const int bestScore, const long long nodesVisited,  Move pv, std::chrono::time_point<std::chrono::steady_clock> startTime, std::mutex &uci_mutex) {
 
     auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-    long long nps = (elapsed > 0) ? (nodesVisited * 1000 / elapsed) : 0;
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - startTime).count();
+    long long nps = (elapsed > 0) ? (nodesVisited * 1000000LL / elapsed) : 0;
 
     std::stringstream log;
     log << "info depth " << depth 
