@@ -12,7 +12,7 @@
 #include "engine.h" 
 
 void readLoop(Game& game){
-    std::string line, command;
+    std::string line;
 
     std::thread searchThread;
     std::ofstream debugFile("engine_log.txt", std::ios::app);
