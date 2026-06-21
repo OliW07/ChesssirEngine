@@ -9,8 +9,6 @@
 A UCI compatible chess engine built with a focus on low latency algorithms with a modern, sleek design. 
 
 ---
-> Self-taught C++20 in 3 months | Nov 2025 - Jan 2026
-## Features
 
 - **1M nodes/second** search performance through bitboard optimization and incremental evaluation
 - **170% throughput increase** via transposition tables with Zobrist hashing
