@@ -4,7 +4,7 @@
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
 
-### High Performance C++20 Chess Engine
+### High Performance C++23 Chess Engine
 
 A UCI compatible chess engine built with a focus on low latency algorithms with a modern, sleek design. 
 

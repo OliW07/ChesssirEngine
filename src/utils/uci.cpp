@@ -3,6 +3,7 @@
 #include <sstream>
 #include <thread>
 #include <fstream>
+#include <chrono>
 
 #include "board.h" 
 #include "utils/uci.h"
@@ -10,6 +11,7 @@
 #include "utils/Types.h"
 #include "moveGenerator.h"
 #include "engine.h" 
+#include "perft.h"
 
 void readLoop(Game& game){
     std::string line;
@@ -101,6 +103,46 @@ void readLoop(Game& game){
             game.chesssir.stopRequested = true; 
 
         } 
+        else if (command == "bench") {
+            std::vector<std::string> positions = {
+                STARTING_FEN,
+                "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+                "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -",
+                "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1"
+            };
+
+            int depth = 5;
+            ss >> depth;
+
+            uint64_t totalNodes = 0;
+            auto benchStart = std::chrono::steady_clock::now();
+
+            for (size_t i = 0; i < positions.size(); i++) {
+                Game benchGame;
+                benchGame.setPosition(positions[i], {});
+
+                auto posStart = std::chrono::steady_clock::now();
+                uint64_t nodes = perftSearch(benchGame, depth);
+                auto posEnd = std::chrono::steady_clock::now();
+
+                auto posMs = std::chrono::duration_cast<std::chrono::milliseconds>(posEnd - posStart).count();
+                totalNodes += nodes;
+
+                std::cout << "Position " << (i + 1) << ": "
+                          << nodes << " nodes, "
+                          << posMs << " ms, "
+                          << (nodes * 1000 / (posMs > 0 ? posMs : 1)) << " nps" << std::endl;
+            }
+
+            auto benchEnd = std::chrono::steady_clock::now();
+            auto benchMs = std::chrono::duration_cast<std::chrono::milliseconds>(benchEnd - benchStart).count();
+
+            std::cout << "Total:   "
+                      << totalNodes << " nodes, "
+                      << benchMs << " ms, "
+                      << (totalNodes * 1000 / (benchMs > 0 ? benchMs : 1)) << " nps" << std::endl;
+
+        }
         else if (command == "quit") {
             game.chesssir.stopRequested = true;
             break;
