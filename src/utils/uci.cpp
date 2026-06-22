@@ -46,6 +46,8 @@ void readLoop(Game& game){
             
         } 
         else if (command == "position") {
+            game.chesssir.stopRequested = true;
+            if (searchThread.joinable()) searchThread.join();
             std::string type, token;
             ss >> type;
             
@@ -74,16 +76,13 @@ void readLoop(Game& game){
         } 
         else if (command == "go") {
 
+            game.chesssir.stopRequested = true;
+            if (searchThread.joinable()) searchThread.join();
+            game.chesssir.stopRequested = false;
+
             log_uci("info starting thinking", game.chesssir.uci_mutex);
 
-            game.chesssir.stopRequested = true;
-
-            // Wait for any previous search to stop. This is now handled by stopRequested flag.
-            // A short sleep can be a simple way to allow the old thread to finish its current task.
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
             std::string token;
-            game.chesssir.stopRequested = false;
             while (ss >> token) {
                 if (token == "wtime") ss >> game.info.wtime;
                 else if (token == "btime") ss >> game.info.btime;
@@ -96,7 +95,6 @@ void readLoop(Game& game){
             
             searchThread = std::thread(&Engine::writeBestMove, &game.chesssir);
             debugFile << "Search thread started." << std::endl;
-            searchThread.detach();
             
         } 
         else if (command == "stop") {
@@ -145,12 +143,12 @@ void readLoop(Game& game){
         }
         else if (command == "quit") {
             game.chesssir.stopRequested = true;
+            if (searchThread.joinable()) searchThread.join();
             break;
         }
 
         debugFile.flush();
     }
 
-    // The detached search thread will continue until it's done.
-    // No need to join it here anymore.
+    if (searchThread.joinable()) searchThread.join();
 }
