@@ -203,9 +203,8 @@ uint64_t AttackHandler::getPinnedPieces(bool isWhite, bool includeEnemies){
     uint64_t pinnedPieces = 0ULL;
     uint64_t kingLocation = game.board.getKingLocation(isWhite);
     
-    for (int i = 0; i < 8; ++i){
+    for (RaysDirection direction : ALL_DIRECTIONS){
 
-        RaysDirection direction  = static_cast<RaysDirection>(i);
         uint64_t ray = rays[direction][kingLocation];
 
         int firstBlocker = game.board.getFirstBlocker(kingLocation, direction);
