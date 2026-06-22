@@ -252,10 +252,8 @@ bool AttackHandler::isSquareAttacked(int pos, bool attackingColourIsWhite){
     if(knightMoves[pos] & enemyKnights) return true;
     if(kingMoves[pos] & enemyKing) return true;
     
-    RaysDirection diagonals[4] = {NorthEast,NorthWest,SouthEast,SouthWest};
-    RaysDirection straights[4] = {North,South,East,West};
 
-    for(RaysDirection direction : diagonals){
+    for(RaysDirection direction : DIAGONAL_DIRECTIONS){
 
         int attackerPos = game.board.getFirstBlocker(pos, direction);
         if(attackerPos == -1) continue;
@@ -264,7 +262,7 @@ bool AttackHandler::isSquareAttacked(int pos, bool attackingColourIsWhite){
 
     }
 
-    for(RaysDirection direction : straights){
+    for(RaysDirection direction : ORTHOGONAL_DIRECTIONS){
 
          int attackerPos = game.board.getFirstBlocker(pos, direction);
          if(attackerPos == -1) continue;

@@ -13,6 +13,9 @@ enum Pieces {Bishop,Queen,Rook,King,Pawn,Knight,None};
 enum RaysDirection {North,South,East,West,NorthEast,SouthEast,NorthWest,SouthWest};
 enum Colours {Black,White,Both};
 
+constexpr std::array<RaysDirection, 4> ORTHOGONAL_DIRECTIONS = {North, East, South, West};
+constexpr std::array<RaysDirection, 4> DIAGONAL_DIRECTIONS = {NorthEast, SouthEast, NorthWest, SouthWest};
+
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const int32_t MATESCORE = 30000;
 
@@ -115,7 +118,6 @@ const std::unordered_map<Pieces,char> pieceToNotation = {
     {Pawn,'p'}
 };
 
-// North, South, East, West, NorthEast, SouthEast, NorthWest, SouthWest
 constexpr std::array<int, 8> Compass = {8, -8, 1, -1, 9, -7, 7, -9};
 
 int convertNotationToInt(const std::string &notation);
