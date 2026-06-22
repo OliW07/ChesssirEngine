@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <string>
-#include <map>
 
 #include "utils/Types.h"
 #include "evaluate.h"
@@ -22,8 +21,6 @@ namespace precomputedData{
     extern uint64_t blackPawnAttacks[64];
     extern uint64_t rays[8][64];
     extern uint64_t rankMasks[8];
-
-    extern std::map<RaysDirection,int> compass;
 
     constexpr std::array<int, 64> pawnPieceSquares = {
         0,   0,   0,   0,   0,   0,   0,   0,

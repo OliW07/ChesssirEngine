@@ -129,11 +129,13 @@ uint64_t AttackHandler::getAttackers(int pos, bool attackingIsWhite){
 
     attackers |= (attackingIsWhite ? (knightMoves[pos] & game.board.state.bitboards[White][Knight]) : (knightMoves[pos] & game.board.state.bitboards[Black][Knight]));
 
-    for (auto &[direction,offset] : Compass){
+    for (int i = 0; i < 8; ++i){
+        
+        RaysDirection direction = static_cast<RaysDirection>(i);
 
         int attackingPiecePos = game.board.getFirstBlocker(pos, direction);
 	
-	if(attackingPiecePos == -1) continue;
+	    if(attackingPiecePos == -1) continue;
 
         Pieces pieceType = (Pieces)game.board.getPieceEnum(attackingPiecePos);
 
@@ -201,8 +203,9 @@ uint64_t AttackHandler::getPinnedPieces(bool isWhite, bool includeEnemies){
     uint64_t pinnedPieces = 0ULL;
     uint64_t kingLocation = game.board.getKingLocation(isWhite);
     
-    for (auto const &[direction,offset] : Compass){
+    for (int i = 0; i < 8; ++i){
 
+        RaysDirection direction  = static_cast<RaysDirection>(i);
         uint64_t ray = rays[direction][kingLocation];
 
         int firstBlocker = game.board.getFirstBlocker(kingLocation, direction);

@@ -115,17 +115,9 @@ const std::unordered_map<Pieces,char> pieceToNotation = {
     {Pawn,'p'}
 };
 
-const std::map<RaysDirection,int> Compass = {
-        {North,8},
-        {NorthEast,9},
-        {East,1},
-        {SouthEast,-7},
-        {South,-8},
-        {SouthWest,-9},
-        {West,-1},
-        {NorthWest,7}
+// North, South, East, West, NorthEast, SouthEast, NorthWest, SouthWest
+constexpr std::array<int, 8> Compass = {8, -8, 1, -1, 9, -7, 7, -9};
 
-};
 int convertNotationToInt(const std::string &notation);
 int convertLocationToRows(const int location);
 int convertLocationToColumns(const int location);

@@ -170,7 +170,10 @@ void computePawnMoves(const int pos, bool isWhite){
 void computeSlidingRays(const int pos){
     
 
-    for (auto const &[direction, offset] : Compass){
+    for (int i = 0; i < 8; ++i){
+
+        RaysDirection direction = static_cast<RaysDirection>(i);
+        int offset = Compass[i];
 
         int newLocation = pos + offset;
 
