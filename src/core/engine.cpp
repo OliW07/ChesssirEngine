@@ -16,41 +16,36 @@
 Move Engine::search(){
 
     startTime = std::chrono::steady_clock::now();
-    // enginePlaysWhite is set in setPosition() based on initial position
     
     setTimeToThink();
     
-    Colours activeColour = (Colours)game.board.state.whiteToMove;
-
     nodesVisited = 0; 
+    searchAge++;
 
     int maxDepth = (game.info.depth == -1) ? 40 : game.info.depth;
 
     int alpha = -999999999,
         beta  =  999999999;
 
-    TTEntry entry;
+    Move bestRootMove = {};
+    bestRootMove.nullMove = true;
 
     for(int currentDepth = 1; (currentDepth <= maxDepth) && !abortSearch(); currentDepth++){
 
-
         int eval = -negamax(currentDepth, alpha, beta, game.ply + 1);
 
+        TTEntry entry;
+        if(tt.probe(game.board.state.zhash, entry)){
+            bestRootMove = unpackMove(entry.bestMove);
+            int absoluteEval = game.board.state.whiteToMove ? entry.eval : -entry.eval;
+            log_uci(currentDepth, absoluteEval, nodesVisited, bestRootMove, startTime, uci_mutex);
+        }
 
-        //Write the current depth search to the entry
-        bool foundInTT = tt.probe(game.board.state.zhash,entry);
-
-        int absoluteEval = game.board.state.whiteToMove ? entry.eval : -entry.eval;
-        log_uci(currentDepth, absoluteEval, nodesVisited, unpackMove(entry.bestMove), startTime, uci_mutex);
-
-
-        //Found a forced mate, no point trying to find the best move
         if(std::abs(eval) > MATESCORE - 1000) break;
 
     }
 
-    //The deepest search that finished was the last to write to the TT
-    return unpackMove(entry.bestMove);
+    return bestRootMove;
 
 }
 int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
@@ -134,7 +129,7 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
     //Update TT with searched results
     if(bestScore <= alphaOrig) type = NodeType::Upperbound;
 
-    tt.write(game.board.state.zhash,maxDepth,ply,scoreToStore,bestMoveThisNode,type);
+    tt.write(game.board.state.zhash,maxDepth,searchAge,scoreToStore,bestMoveThisNode,type);
 
     return bestScore;
 }

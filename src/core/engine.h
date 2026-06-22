@@ -22,6 +22,7 @@ class Engine {
         }
 
         long long nodesVisited = 0;
+        int searchAge = 0;
         int timeToThink;
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         std::atomic<bool> stopRequested = false;
