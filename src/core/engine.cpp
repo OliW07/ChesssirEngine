@@ -71,7 +71,7 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
 
     if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
     
-    if(maxDepth == 0) return game.board.state.whiteToMove ? game.board.eval : -game.board.eval;
+    if(maxDepth == 0) return quiescence(alpha, beta, ply);
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = -999999;
@@ -132,6 +132,52 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
     tt.write(game.board.state.zhash,maxDepth,searchAge,scoreToStore,bestMoveThisNode,type);
 
     return bestScore;
+}
+
+
+int Engine::quiescence(int alpha, int beta, int ply) {
+
+    nodesVisited++;
+
+    if ((nodesVisited & 2047) == 0 && abortSearch()) return 0;
+
+    Colours activeColour = (Colours)game.board.state.whiteToMove;
+    bool inCheck = game.attackHandler.isSquareAttacked(
+        game.board.getKingLocation(activeColour), !activeColour);
+
+    if (!inCheck) {
+        int standPat = game.board.state.whiteToMove ? game.board.eval : -game.board.eval;
+
+        if (standPat >= beta) return beta;
+        if (standPat > alpha) alpha = standPat;
+    }
+
+    MoveList moves;
+    if (inCheck) {
+        moves = game.moveGenerator.getAllMoves();
+    } else {
+        moves = game.moveGenerator.getAllCaptures();
+    }
+
+    if (moves.count == 0) {
+        if (inCheck) return -MATESCORE + ply;
+        return 0;
+    }
+
+    for (int i = 0; i < moves.count; i++) {
+
+        moves.sortNext(i);
+        Move move = moves.moves[i];
+
+        game.board.makeMove(move);
+        int eval = -quiescence(-beta, -alpha, ply + 1);
+        game.board.unmakeMove(move);
+
+        if (eval >= beta) return beta;
+        if (eval > alpha) alpha = eval;
+    }
+
+    return alpha;
 }
 
 

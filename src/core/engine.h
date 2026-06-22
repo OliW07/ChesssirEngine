@@ -34,6 +34,7 @@ class Engine {
         void setTimeToThink();
         bool abortSearch();
         int negamax(int maxDepth, int alpha, int beta, int ply);
+        int quiescence(int alpha, int beta, int ply);
 
 };
 #endif
