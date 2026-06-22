@@ -22,6 +22,7 @@ class Engine {
         }
 
         long long nodesVisited = 0;
+        int searchAge = 0;
         int timeToThink;
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         std::atomic<bool> stopRequested = false;
@@ -33,6 +34,7 @@ class Engine {
         void setTimeToThink();
         bool abortSearch();
         int negamax(int maxDepth, int alpha, int beta, int ply);
+        int quiescence(int alpha, int beta, int ply);
 
 };
 #endif

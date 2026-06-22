@@ -67,6 +67,7 @@ class MoveGenerator {
         uint64_t getPromotionMoves(const int pos);
 
         MoveList getAllMoves();
+        MoveList getAllCaptures();
 
 
 };

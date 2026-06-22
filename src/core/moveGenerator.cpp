@@ -297,6 +297,61 @@ MoveList MoveGenerator::getAllMoves(){
 }
 
 
+MoveList MoveGenerator::getAllCaptures(){
+
+    MoveList moves;
+
+    Colours activeColour = (Colours)game.board.state.whiteToMove;
+
+    for(int i = 0; i < game.board.state.pieceList.pieceCount[activeColour]; i++){
+        
+        int pieceLoc = game.board.state.pieceList.list[activeColour][i];
+        uint64_t legalMoves = getLegalMoves(pieceLoc);
+        uint64_t promotionMoves = getPromotionMoves(pieceLoc);
+
+        Move move;
+        move.from = pieceLoc;
+        
+        while(legalMoves)  {
+            
+            move.to = ctz64(legalMoves);
+            legalMoves &= (legalMoves - 1);
+
+            bool isEnPassant = game.board.state.enPassantSquare != -1
+                               && move.to == game.board.state.enPassantSquare;
+
+            if((game.board.state.occupancy[Both] & (1ULL << move.to)) || isEnPassant){
+                moves.add(move);
+                setCaptureScore(move,game.board);
+                if(isEnPassant){
+                    move.orderScore = PieceValues[Pawn] * 10 - PieceValues[Pawn];
+                }
+            }
+            
+        }
+
+        while(promotionMoves){
+            
+            move.to = ctz64(promotionMoves);
+            promotionMoves &= (promotionMoves - 1);
+
+            for(Pieces promotionPiece : {Rook,Knight,Bishop,Queen}){
+
+                move.promotionPiece = promotionPiece;
+
+                if(game.board.state.occupancy[Both] & (1ULL << move.to)){
+                    moves.add(move);
+                    setCaptureScore(move,game.board);
+                }
+            }
+            
+        }
+
+    }
+
+    return moves;
+}
+
 void setCaptureScore(Move &move, Board &board){
 
     if(board.state.mailBox[move.to] != 0) {
