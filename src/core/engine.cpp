@@ -1,77 +1,76 @@
+#include "engine.h"
+
 #include <chrono>
-#include <iostream>
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
+#include "board.h"
+#include "debug.h"
+#include "evaluate.h"
 #include "moveGenerator.h"
 #include "utils/Types.h"
 #include "utils/log.h"
-#include "engine.h"
-#include "board.h"
-#include "evaluate.h"
-#include "debug.h"
 
-Move Engine::search(){
-
+Move Engine::search() {
     startTime = std::chrono::steady_clock::now();
-    
+
     setTimeToThink();
-    
-    nodesVisited = 0; 
+
+    nodesVisited = 0;
     searchAge++;
 
     int maxDepth = (game.info.depth == -1) ? 40 : game.info.depth;
 
-    int alpha = -999999999,
-        beta  =  999999999;
+    int alpha = -999999999, beta = 999999999;
 
     Move bestRootMove = {};
     bestRootMove.nullMove = true;
 
-    for(int currentDepth = 1; (currentDepth <= maxDepth) && !abortSearch(); currentDepth++){
-
+    for (int currentDepth = 1; (currentDepth <= maxDepth) && !abortSearch(); currentDepth++) {
         int eval = -negamax(currentDepth, alpha, beta, game.ply + 1);
 
         TTEntry entry;
-        if(tt.probe(game.board.state.zhash, entry)){
+        if (tt.probe(game.board.state.zhash, entry)) {
             bestRootMove = unpackMove(entry.bestMove);
             int absoluteEval = game.board.state.whiteToMove ? entry.eval : -entry.eval;
             log_uci(currentDepth, absoluteEval, nodesVisited, bestRootMove, startTime, uci_mutex);
         }
 
-        if(std::abs(eval) > MATESCORE - 1000) break;
-
+        if (std::abs(eval) > MATESCORE - 1000)
+            break;
     }
 
     return bestRootMove;
-
 }
-int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
-    
+int Engine::negamax(int maxDepth, int alpha, int beta, int ply) {
     nodesVisited++;
 
     TTEntry stored;
-    bool foundInTT = tt.probe(game.board.state.zhash,stored);
-    if(foundInTT){
-    
-        if(stored.eval >= MATESCORE-1000){
+    bool foundInTT = tt.probe(game.board.state.zhash, stored);
+    if (foundInTT) {
+        if (stored.eval >= MATESCORE - 1000) {
             stored.eval -= ply;
-        }else if(stored.eval <= -MATESCORE+1000){
+        } else if (stored.eval <= -MATESCORE + 1000) {
             stored.eval += ply;
         }
-        if(stored.depth >= maxDepth){
-
-            if(stored.type == NodeType::Exact) return stored.eval;
-            if(stored.type == NodeType::Lowerbound && stored.eval  >= beta) return stored.eval;
-            if(stored.type == NodeType::Upperbound && stored.eval <= alpha) return stored.eval;
+        if (stored.depth >= maxDepth) {
+            if (stored.type == NodeType::Exact)
+                return stored.eval;
+            if (stored.type == NodeType::Lowerbound && stored.eval >= beta)
+                return stored.eval;
+            if (stored.type == NodeType::Upperbound && stored.eval <= alpha)
+                return stored.eval;
         }
     }
 
-    if((nodesVisited & 2048) == 0 && abortSearch()) return 0; //Discard value later
-    
-    if(maxDepth == 0) return quiescence(alpha, beta, ply);
+    if ((nodesVisited & 2048) == 0 && abortSearch())
+        return 0;  // Discard value later
+
+    if (maxDepth == 0)
+        return quiescence(alpha, beta, ply);
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
     int bestScore = -999999;
@@ -81,75 +80,75 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply){
 
     MoveList moves = game.moveGenerator.getAllMoves();
 
-    //If the stored best move is not null
-    if (foundInTT && stored.bestMove != 0 && !((stored.bestMove >> 15) & 1)) { 
-        moves.setBestMove(unpackMove(stored.bestMove)); 
+    // If the stored best move is not null
+    if (foundInTT && stored.bestMove != 0 && !((stored.bestMove >> 15) & 1)) {
+        moves.setBestMove(unpackMove(stored.bestMove));
     }
 
-    if(moves.count == 0){
-
+    if (moves.count == 0) {
         bool inCheck = game.attackHandler.isSquareAttacked(game.board.getKingLocation(activeColour), !activeColour);
         return inCheck ? (-MATESCORE + ply) : 0;
     }
 
-    //Check for special draws
-    if(game.isDraw()) return 0;
+    // Check for special draws
+    if (game.isDraw())
+        return 0;
 
-    for(int i = 0; i < moves.count; i++){
-        
+    for (int i = 0; i < moves.count; i++) {
         moves.sortNext(i);
         Move move = moves.moves[i];
 
         game.board.makeMove(move);
 
-        int eval = -negamax(maxDepth-1,-beta,-alpha,ply+1);
+        int eval = -negamax(maxDepth - 1, -beta, -alpha, ply + 1);
 
         game.board.unmakeMove(move);
 
-        if(eval > bestScore){
+        if (eval > bestScore) {
             bestScore = eval;
             bestMoveThisNode = move;
         }
 
-        if(eval >= beta){
+        if (eval >= beta) {
             type = NodeType::Lowerbound;
             break;
         }
 
-        if(eval > alpha){
+        if (eval > alpha) {
             alpha = eval;
         }
-         
     }
     int scoreToStore = bestScore;
-    if (scoreToStore > MATESCORE-1000) scoreToStore += ply;
-    if (scoreToStore < -MATESCORE+1000) scoreToStore -= ply;
+    if (scoreToStore > MATESCORE - 1000)
+        scoreToStore += ply;
+    if (scoreToStore < -MATESCORE + 1000)
+        scoreToStore -= ply;
 
+    // Update TT with searched results
+    if (bestScore <= alphaOrig)
+        type = NodeType::Upperbound;
 
-    //Update TT with searched results
-    if(bestScore <= alphaOrig) type = NodeType::Upperbound;
-
-    tt.write(game.board.state.zhash,maxDepth,searchAge,scoreToStore,bestMoveThisNode,type);
+    tt.write(game.board.state.zhash, maxDepth, searchAge, scoreToStore, bestMoveThisNode, type);
 
     return bestScore;
 }
 
-
 int Engine::quiescence(int alpha, int beta, int ply) {
-
     nodesVisited++;
 
-    if ((nodesVisited & 2047) == 0 && abortSearch()) return 0;
+    if ((nodesVisited & 2047) == 0 && abortSearch())
+        return 0;
 
     Colours activeColour = (Colours)game.board.state.whiteToMove;
-    bool inCheck = game.attackHandler.isSquareAttacked(
-        game.board.getKingLocation(activeColour), !activeColour);
+    bool inCheck = game.attackHandler.isSquareAttacked(game.board.getKingLocation(activeColour), !activeColour);
 
     if (!inCheck) {
         int standPat = game.board.state.whiteToMove ? game.board.eval : -game.board.eval;
 
-        if (standPat >= beta) return beta;
-        if (standPat > alpha) alpha = standPat;
+        if (standPat >= beta)
+            return beta;
+        if (standPat > alpha)
+            alpha = standPat;
     }
 
     MoveList moves;
@@ -160,12 +159,12 @@ int Engine::quiescence(int alpha, int beta, int ply) {
     }
 
     if (moves.count == 0) {
-        if (inCheck) return -MATESCORE + ply;
+        if (inCheck)
+            return -MATESCORE + ply;
         return 0;
     }
 
     for (int i = 0; i < moves.count; i++) {
-
         moves.sortNext(i);
         Move move = moves.moves[i];
 
@@ -173,21 +172,22 @@ int Engine::quiescence(int alpha, int beta, int ply) {
         int eval = -quiescence(-beta, -alpha, ply + 1);
         game.board.unmakeMove(move);
 
-        if (eval >= beta) return beta;
-        if (eval > alpha) alpha = eval;
+        if (eval >= beta)
+            return beta;
+        if (eval > alpha)
+            alpha = eval;
     }
 
     return alpha;
 }
 
-
-void Engine::writeBestMove(){
+void Engine::writeBestMove() {
     std::ofstream df("engine_log.txt", std::ios::app);
     df << "--- Thread Active ---" << std::endl;
 
     log_uci("info string Chessir is calculating...", uci_mutex);
 
-    Move bestMove = search(); 
+    Move bestMove = search();
     std::string moveStr = convertMoveToAlgebraicNotation(bestMove);
 
     df << "Search finished. Resulting Move: [" << moveStr << "]" << std::endl;
@@ -200,53 +200,47 @@ void Engine::writeBestMove(){
     df.close();
 }
 
-
-bool Engine::abortSearch(){
-     
-    if(stopRequested) return true;
+bool Engine::abortSearch() {
+    if (stopRequested)
+        return true;
 
     auto now = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
 
-    if((elapsed >= timeToThink) && game.info.depth == -1) return true;
+    if ((elapsed >= timeToThink) && game.info.depth == -1)
+        return true;
 
     return false;
 }
 
-void Engine::setTimeToThink(){
+void Engine::setTimeToThink() {
+    // Check if we have used our quota of time for this search
 
-    //Check if we have used our quota of time for this search
-    
     int myTime = game.board.enginePlaysWhite ? game.info.wtime : game.info.btime;
-    int myInc  = game.board.enginePlaysWhite ? game.info.winc  : game.info.binc;
+    int myInc = game.board.enginePlaysWhite ? game.info.winc : game.info.binc;
 
     if (game.info.movetime != -1) {
         // EXACT time per move
-        timeToThink = game.info.movetime; 
-    }
-    else if (game.info.infinite) {
+        timeToThink = game.info.movetime;
+    } else if (game.info.infinite) {
         // Analyze until user types "stop"
-        timeToThink = 99999999; 
-    }
-    else if (myTime != -1) {
-
+        timeToThink = 99999999;
+    } else if (myTime != -1) {
         if (game.info.movestogo != -1) {
             // Tournament mode
-            timeToThink = myTime / game.info.movestogo; 
+            timeToThink = myTime / game.info.movestogo;
             // safety buffer
-            if (timeToThink > 50) timeToThink -= 50; 
+            if (timeToThink > 50)
+                timeToThink -= 50;
         } else {
-            //Standard mode 
+            // Standard mode
             timeToThink = (myTime / 20) + (myInc / 2);
         }
-    } 
-    else if (game.info.depth != -1) {
-        //Handle in search: Set to huge time so abortSearch relies on depth check
+    } else if (game.info.depth != -1) {
+        // Handle in search: Set to huge time so abortSearch relies on depth check
         timeToThink = 99999999;
-    }
-    else {
+    } else {
         // Fallback default
         timeToThink = 1000;
     }
-
 }

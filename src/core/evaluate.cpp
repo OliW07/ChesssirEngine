@@ -1,13 +1,12 @@
 #include "evaluate.h"
-#include "board.h"
-#include "utils/Types.h"
-#include "precompute.h"
 
-int generateFullEval(Board &board){
-    
+#include "board.h"
+#include "precompute.h"
+#include "utils/Types.h"
+
+int generateFullEval(Board& board) {
     int eval = 0;
-    for(int i = 0; i < board.state.pieceList.pieceCount[White]; i++){
-        
+    for (int i = 0; i < board.state.pieceList.pieceCount[White]; i++) {
         int pos = board.state.pieceList.list[White][i];
         Pieces pieceType = (Pieces)board.getPieceEnum(pos);
 
@@ -15,8 +14,7 @@ int generateFullEval(Board &board){
         eval += evaluatePieceSquare(pieceType, pos, true, false);
     }
 
-    for(int i = 0; i < board.state.pieceList.pieceCount[Black]; i++){
-        
+    for (int i = 0; i < board.state.pieceList.pieceCount[Black]; i++) {
         int pos = board.state.pieceList.list[Black][i];
         Pieces pieceType = (Pieces)board.getPieceEnum(pos);
 
@@ -25,14 +23,8 @@ int generateFullEval(Board &board){
     }
 
     return eval;
-
-
 }
 
-
-void setFullEval(Board &board){
-
+void setFullEval(Board& board) {
     board.eval = generateFullEval(board);
-    
 }
-

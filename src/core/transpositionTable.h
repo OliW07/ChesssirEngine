@@ -2,13 +2,14 @@
 #define TT_H
 
 #include <Types.h>
+
 #include <memory>
+
 #include "utils/bitops.h"
 
 using namespace ChessEngine::Utils;
 
-enum class NodeType : uint8_t {Exact, Upperbound, Lowerbound};
-
+enum class NodeType : uint8_t { Exact, Upperbound, Lowerbound };
 
 struct alignas(16) TTEntry {
     uint64_t zhash;
@@ -19,23 +20,20 @@ struct alignas(16) TTEntry {
     NodeType type;
 };
 
-
-Move unpackMove(uint16_t data); 
-uint16_t packMove(const Move& m); 
+Move unpackMove(uint16_t data);
+uint16_t packMove(const Move& m);
 
 class TranspositionTable {
-private:
+    private:
     size_t mask;
-public:
 
-    
+    public:
     std::unique_ptr<TTEntry[]> entries;
 
-    TranspositionTable(int SIZE_MB){
-
+    TranspositionTable(int SIZE_MB) {
         int maxEntries = SIZE_MB * 1024 * 1024 / sizeof(TTEntry);
-        
-        //Round size down to powers of 2 for quick operations
+
+        // Round size down to powers of 2 for quick operations
         maxEntries = 1ULL << (63 - clz64(maxEntries));
         mask = maxEntries - 1;
         entries = std::make_unique_for_overwrite<TTEntry[]>(maxEntries);
@@ -43,10 +41,7 @@ public:
 
     void write(uint64_t zhash, uint8_t depth, uint8_t age, int16_t eval, Move move, NodeType type);
     void clear();
-    bool probe(uint64_t zhash, TTEntry &out);
+    bool probe(uint64_t zhash, TTEntry& out);
 };
-
-
-
 
 #endif

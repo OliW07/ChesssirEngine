@@ -1,28 +1,24 @@
+#include "fenHelper.h"
+
 #include <cctype>
 #include <sstream>
 
-#include "fenHelper.h"
-#include "utils/Types.h"
 #include "board.h"
+#include "utils/Types.h"
 
-
-void parseFenString(std::string fen, BoardState &state){
-
+void parseFenString(std::string fen, BoardState& state) {
     uint64_t boardIndex = 56;
 
-    for(int i = 0; i < fen.length(); i++){
-
+    for (int i = 0; i < fen.length(); i++) {
         char character = fen[i];
         char uCharacter = static_cast<unsigned char>(character);
 
-
-        if(std::isdigit(uCharacter)){
+        if (std::isdigit(uCharacter)) {
             boardIndex += (uCharacter - '0');
             continue;
 
-        }else if(std::isalpha(uCharacter)){
-
-            uint64_t *pieceBitBoard = nullptr;
+        } else if (std::isalpha(uCharacter)) {
+            uint64_t* pieceBitBoard = nullptr;
 
             bool isWhite = std::isupper(uCharacter);
             Pieces pieceType = notationToPieceMap.at(std::tolower(uCharacter));
@@ -34,27 +30,24 @@ void parseFenString(std::string fen, BoardState &state){
             state.occupancy[isWhite] ^= pieceMask;
             state.occupancy[Both] ^= pieceMask;
             state.bitboards[Both][pieceType] ^= pieceMask;
-            state.mailBox[boardIndex] = convertPieceToBinary(pieceType,isWhite);
+            state.mailBox[boardIndex] = convertPieceToBinary(pieceType, isWhite);
             state.pieceList.addPiece(boardIndex, isWhite ? White : Black);
 
-        }else if(uCharacter == '/'){
-
-            //Move position down a line and to the start (left) side
+        } else if (uCharacter == '/') {
+            // Move position down a line and to the start (left) side
             boardIndex -= 16;
-            
+
             continue;
-        }else if(uCharacter == ' '){
-            //End of piece data in fen
-            fen = fen.substr(i+1);
+        } else if (uCharacter == ' ') {
+            // End of piece data in fen
+            fen = fen.substr(i + 1);
             break;
         }
 
         boardIndex += 1;
-            
     }
 
-
-    //Parse game data from the end of FEN string
+    // Parse game data from the end of FEN string
 
     std::stringstream tokens(fen);
     std::string token;
@@ -64,34 +57,33 @@ void parseFenString(std::string fen, BoardState &state){
     state.whiteStarts = (token == "w");
 
     tokens >> token;
-    
-    for(char c : token){
-        
-        switch(c){
-            case('K'):
+
+    for (char c : token) {
+        switch (c) {
+            case ('K'):
                 state.castlingRights += 8;
-                break;  
-                
-            case('Q'):
+                break;
+
+            case ('Q'):
                 state.castlingRights += 4;
                 break;
-            
-            case('k'):
+
+            case ('k'):
                 state.castlingRights += 2;
                 break;
-            
-            case('q'):
+
+            case ('q'):
                 state.castlingRights += 1;
                 break;
-            
         }
-	} 
-
+    }
 
     tokens >> token;
 
-    if(token == "-") state.enPassantSquare = -1;
-    else state.enPassantSquare = convertNotationToInt(token);
+    if (token == "-")
+        state.enPassantSquare = -1;
+    else
+        state.enPassantSquare = convertNotationToInt(token);
 
     tokens >> state.halfMoveClock;
     tokens >> state.fullMoveClock;

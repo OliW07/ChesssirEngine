@@ -13,7 +13,8 @@ namespace Utils {
 inline int ctz64(uint64_t value) {
 #ifdef _MSC_VER
     unsigned long index;
-    if (value == 0) return 64;
+    if (value == 0)
+        return 64;
     _BitScanForward64(&index, value);
     return static_cast<int>(index);
 #else
@@ -21,11 +22,12 @@ inline int ctz64(uint64_t value) {
 #endif
 }
 
-// Count leading zeros in 64-bit integer  
+// Count leading zeros in 64-bit integer
 inline int clz64(uint64_t value) {
 #ifdef _MSC_VER
     unsigned long index;
-    if (value == 0) return 64;
+    if (value == 0)
+        return 64;
     _BitScanReverse64(&index, value);
     return 63 - static_cast<int>(index);
 #else
@@ -42,5 +44,5 @@ inline int popcount64(uint64_t value) {
 #endif
 }
 
-} // namespace Utils
-} // namespace ChessEngine
+}  // namespace Utils
+}  // namespace ChessEngine

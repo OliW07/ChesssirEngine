@@ -1,10 +1,7 @@
 #include "transpositionTable.h"
 
 uint16_t packMove(const Move& m) {
-   return (uint16_t)m.from | 
-           ((uint16_t)m.to << 6) | 
-           ((uint16_t)m.promotionPiece << 12) | 
-           ((uint16_t)m.nullMove << 15);
+    return (uint16_t)m.from | ((uint16_t)m.to << 6) | ((uint16_t)m.promotionPiece << 12) | ((uint16_t)m.nullMove << 15);
 }
 
 Move unpackMove(uint16_t data) {
@@ -16,17 +13,17 @@ Move unpackMove(uint16_t data) {
     return m;
 }
 
-void TranspositionTable::clear(){
-    for(size_t i = 0; i <= mask; i++){
-        //Only clear the hash to save time
+void TranspositionTable::clear() {
+    for (size_t i = 0; i <= mask; i++) {
+        // Only clear the hash to save time
         entries[i].zhash = 0;
     }
 }
 
-void TranspositionTable::write(uint64_t zhash, uint8_t depth, uint8_t age, int16_t eval, Move move, NodeType type){
-    TTEntry &slot = entries[zhash & mask];
+void TranspositionTable::write(uint64_t zhash, uint8_t depth, uint8_t age, int16_t eval, Move move, NodeType type) {
+    TTEntry& slot = entries[zhash & mask];
 
-    if(slot.zhash == 0 || slot.depth <= depth || slot.age != age){
+    if (slot.zhash == 0 || slot.depth <= depth || slot.age != age) {
         slot.zhash = zhash;
         slot.depth = depth;
         slot.age = age;
@@ -36,14 +33,12 @@ void TranspositionTable::write(uint64_t zhash, uint8_t depth, uint8_t age, int16
     }
 }
 
-bool TranspositionTable::probe(uint64_t zhash, TTEntry &out){
-    TTEntry &slot = entries[zhash & mask];
-    
-    if(slot.zhash != zhash) return false;
+bool TranspositionTable::probe(uint64_t zhash, TTEntry& out) {
+    TTEntry& slot = entries[zhash & mask];
+
+    if (slot.zhash != zhash)
+        return false;
 
     out = slot;
     return true;
-
 }
-
-

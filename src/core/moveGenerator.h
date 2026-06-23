@@ -10,25 +10,22 @@ struct MoveList {
     Move moves[256];
     int count = 0;
 
-    
-
-    inline void add(const Move &move){
-        if(count < 256){
+    inline void add(const Move& move) {
+        if (count < 256) {
             moves[count++] = move;
         }
     }
 
-    inline void setBestMove(const Move &bestMove){
-
-        for(int i = 0; i < count; i++){
-            if(moves[i] == bestMove){
+    inline void setBestMove(const Move& bestMove) {
+        for (int i = 0; i < count; i++) {
+            if (moves[i] == bestMove) {
                 moves[i].orderScore = 100000;
                 break;
             }
         }
     }
 
-   inline void sortNext(int currentIdx) {
+    inline void sortNext(int currentIdx) {
         int bestScore = -1;
         int bestIndex = currentIdx;
 
@@ -42,36 +39,25 @@ struct MoveList {
         std::swap(moves[currentIdx], moves[bestIndex]);
     }
 
-
-    Move *begin() { 
-        return moves;
-    };
-    Move *end() { return moves + count;};
+    Move* begin() { return moves; };
+    Move* end() { return moves + count; };
 };
 
 class MoveGenerator {
-
-
     private:
-        
-        Game &game;
-    public: 
-        
-        MoveGenerator(Game &gameParam) : game(gameParam){
-            
-        }
-            
-        uint64_t getPseudoLegalMoves(int pos);
-        uint64_t applyLegalMoveValidation(const int pos, uint64_t moves);
-        uint64_t getLegalMoves(const int pos);
-        uint64_t getPromotionMoves(const int pos);
+    Game& game;
 
-        MoveList getAllMoves();
-        MoveList getAllCaptures();
+    public:
+    MoveGenerator(Game& gameParam) : game(gameParam) {}
 
+    uint64_t getPseudoLegalMoves(int pos);
+    uint64_t applyLegalMoveValidation(const int pos, uint64_t moves);
+    uint64_t getLegalMoves(const int pos);
+    uint64_t getPromotionMoves(const int pos);
 
+    MoveList getAllMoves();
+    MoveList getAllCaptures();
 };
 
-
-void setCaptureScore(Move &move, Board &board);
+void setCaptureScore(Move& move, Board& board);
 #endif

@@ -2,213 +2,196 @@
 #include <stdexcept>
 #include <vector>
 
-
 #include "utils/Types.h"
 #include "utils/bitops.h"
 
 using namespace ChessEngine::Utils;
 
-
-
-int convertNotationToInt(const std::string &notation){
-    
+int convertNotationToInt(const std::string& notation) {
     int file = static_cast<int>(notation[0] - 'a');
     int rank = static_cast<int>(notation[1] - '0');
 
-    if((file > 7) || (file < 0) || (rank > 8) || (rank < 1)){
-        throw std::runtime_error("Notation "+notation+"is out of range ");
+    if ((file > 7) || (file < 0) || (rank > 8) || (rank < 1)) {
+        throw std::runtime_error("Notation " + notation + "is out of range ");
     }
 
-    return (file + (rank-1)*8);
-
+    return (file + (rank - 1) * 8);
 }
 
-int convertLocationToRows(const int location){
-    if(location < 0 || location > 63){
+int convertLocationToRows(const int location) {
+    if (location < 0 || location > 63) {
         throw std::runtime_error("Location is out of range");
     }
-    return location/8;
+    return location / 8;
 }
 
-int countOnes(uint64_t state){
+int countOnes(uint64_t state) {
     return popcount64(state);
 }
 
+Move convertAlgebraicNotationToMove(const std::string& notation) {
+    if (notation.length() < 4 || notation.length() > 5)
+        return {};
 
-Move convertAlgebraicNotationToMove(const std::string &notation){
+    std::string from = notation.substr(0, 2);
+    std::string to = notation.substr(2, 2);
 
-        if(notation.length() < 4 || notation.length() > 5) return {};
-            
+    Pieces promotionPiece = None;
 
-        std::string from = notation.substr(0,2);
-        std::string to = notation.substr(2,2);
+    Move move;
 
-        Pieces promotionPiece = None;
-
-        Move move;
-        
-        try{
-
-            if(notation.length() == 5){
-                promotionPiece = promotionCharToPiece.at(notation[4]);
-            } 
-            
-
-            move.to = convertNotationToInt(to);
-            move.from = convertNotationToInt(from);
-            move.promotionPiece = promotionPiece;
-
-            return move;
-
-        }catch(...){
-
-            move.nullMove = true;
-            return move;
+    try {
+        if (notation.length() == 5) {
+            promotionPiece = promotionCharToPiece.at(notation[4]);
         }
 
-        
+        move.to = convertNotationToInt(to);
+        move.from = convertNotationToInt(from);
+        move.promotionPiece = promotionPiece;
+
+        return move;
+
+    } catch (...) {
+        move.nullMove = true;
+        return move;
+    }
 }
 
-Colours getSquareColour(int pos){
+Colours getSquareColour(int pos) {
     int rows = convertLocationToRows(pos);
     int columns = convertLocationToColumns(pos);
 
-    if(rows % 2 == 0){
-
-        if(columns % 2 == 0) return Black;
+    if (rows % 2 == 0) {
+        if (columns % 2 == 0)
+            return Black;
         return White;
     }
 
-    if(columns % 2 == 0) return White;
+    if (columns % 2 == 0)
+        return White;
 
     return Black;
 }
 
-void PieceList::addPiece(int pos, Colours colour){
-    if(pieceCount[colour] >= 16) { std::cout << "DEBUG: Piece list overflow attempt" << std::endl; return; }
+void PieceList::addPiece(int pos, Colours colour) {
+    if (pieceCount[colour] >= 16) {
+        std::cout << "DEBUG: Piece list overflow attempt" << std::endl;
+        return;
+    }
     list[colour][pieceCount[colour]] = pos;
     mapBoardLocToList[pos] = pieceCount[colour];
-    pieceCount[colour] ++;
+    pieceCount[colour]++;
 }
 
-void PieceList::removePiece(int pos, Colours colour){
+void PieceList::removePiece(int pos, Colours colour) {
     int listIndex = mapBoardLocToList[pos];
-    
-    //Swap current index with last index, to keep O(1)
+
+    // Swap current index with last index, to keep O(1)
     list[colour][listIndex] = list[colour][pieceCount[colour] - 1];
-    
+
     mapBoardLocToList[list[colour][listIndex]] = listIndex;
-    
-    pieceCount[colour] --;
+
+    pieceCount[colour]--;
 
     mapBoardLocToList[pos] = -1;
-
 }
 
-void PieceList::movePiece(int to, int from, Colours colour){
+void PieceList::movePiece(int to, int from, Colours colour) {
     int listIndex = mapBoardLocToList[from];
     list[colour][listIndex] = to;
     mapBoardLocToList[from] = -1;
     mapBoardLocToList[to] = listIndex;
 }
 
-std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard){
+std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard) {
     std::vector<int> locations = {};
-    while(bitBoard){
-        
+    while (bitBoard) {
         int location = ctz64(bitBoard);
         locations.push_back(location);
 
-        //Toggle the bit off
+        // Toggle the bit off
         bitBoard ^= (1ULL << location);
     }
 
     return locations;
 }
 
-RaysDirection convertPositionsToDirections(int pos1, int pos2){
+RaysDirection convertPositionsToDirections(int pos1, int pos2) {
+    int pos1Rows = convertLocationToRows(pos1), pos2Rows = convertLocationToRows(pos2),
+        pos1Columns = convertLocationToColumns(pos1), pos2Columns = convertLocationToColumns(pos2),
 
-    int pos1Rows = convertLocationToRows(pos1),
-        pos2Rows = convertLocationToRows(pos2),
-        pos1Columns = convertLocationToColumns(pos1),
-        pos2Columns = convertLocationToColumns(pos2),
-
-        rowsDifference = pos1Rows - pos2Rows,
-        columnsDifference = pos1Columns - pos2Columns;
+        rowsDifference = pos1Rows - pos2Rows, columnsDifference = pos1Columns - pos2Columns;
 
     bool isDiagonal = abs(rowsDifference) == abs(columnsDifference);
 
-    //Direction relative to pos1
+    // Direction relative to pos1
     RaysDirection direction;
-    
-    if(rowsDifference == 0 && columnsDifference > 0){
+
+    if (rowsDifference == 0 && columnsDifference > 0) {
         direction = West;
-    }else if(rowsDifference == 0 && columnsDifference < 0){
+    } else if (rowsDifference == 0 && columnsDifference < 0) {
         direction = East;
-    }else if(columnsDifference == 0 && rowsDifference > 0){
+    } else if (columnsDifference == 0 && rowsDifference > 0) {
         direction = South;
-    }else if(columnsDifference == 0 && rowsDifference < 0){
+    } else if (columnsDifference == 0 && rowsDifference < 0) {
         direction = North;
-    }else if(rowsDifference > 0 && columnsDifference > 0 && isDiagonal){
+    } else if (rowsDifference > 0 && columnsDifference > 0 && isDiagonal) {
         direction = SouthWest;
-    }else if(rowsDifference < 0 && columnsDifference < 0 && isDiagonal){
+    } else if (rowsDifference < 0 && columnsDifference < 0 && isDiagonal) {
         direction = NorthEast;
-    }else if(rowsDifference > 0 && columnsDifference < 0 && isDiagonal){
+    } else if (rowsDifference > 0 && columnsDifference < 0 && isDiagonal) {
         direction = SouthEast;
-    }else if(rowsDifference < 0 && columnsDifference > 0 && isDiagonal){
+    } else if (rowsDifference < 0 && columnsDifference > 0 && isDiagonal) {
         direction = NorthWest;
     }
 
     return direction;
 }
 
-std::string convertMoveToAlgebraicNotation(Move move){
+std::string convertMoveToAlgebraicNotation(Move move) {
     // Check for invalid moves (null moves or uninitialized moves)
-    if(move.nullMove || move.from > 63 || move.to > 63) {
-        return "0000"; // Return null move notation for invalid moves
+    if (move.nullMove || move.from > 63 || move.to > 63) {
+        return "0000";  // Return null move notation for invalid moves
     }
-    
+
     char numberTo = convertLocationToRows(move.to) + '1';
     char letterTo = convertLocationToColumns(move.to) + 'a';
 
     char numberFrom = convertLocationToRows(move.from) + '1';
     char letterFrom = convertLocationToColumns(move.from) + 'a';
 
-    
     std::string result = std::string() + letterFrom + numberFrom + letterTo + numberTo;
 
-    if(move.promotionPiece != None) result += pieceToNotation.at(move.promotionPiece);
+    if (move.promotionPiece != None)
+        result += pieceToNotation.at(move.promotionPiece);
 
-    return result; 
+    return result;
 }
 
-int convertLocationToColumns(const int location){
-    if(location < 0 || location > 63){
-        throw std::runtime_error("Location "+std::to_string(location)+" is out of range");
+int convertLocationToColumns(const int location) {
+    if (location < 0 || location > 63) {
+        throw std::runtime_error("Location " + std::to_string(location) + " is out of range");
     }
-    return location%8;
+    return location % 8;
 }
 
-bool onlyOnePiece(uint64_t state){
-    if(state == 0) return false;
+bool onlyOnePiece(uint64_t state) {
+    if (state == 0)
+        return false;
     return (ctz64(state) + clz64(state) == 63);
 }
 
-bool posInBounds(int pos){
+bool posInBounds(int pos) {
     return (pos >= 0 && pos <= 63);
 }
 
-bool pieceWrapsTheBoard(int pos1, int pos2){
+bool pieceWrapsTheBoard(int pos1, int pos2) {
     int columnsDifference = abs(convertLocationToColumns(pos1) - convertLocationToColumns(pos2));
     int rowsDifference = abs(convertLocationToRows(pos1) - convertLocationToRows(pos2));
 
     return !((columnsDifference < 2) && (rowsDifference < 2));
 }
 
-
-
-uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite){
-
+uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite) {
     return isWhite ? pieceEnum : pieceEnum + 8;
-
 }

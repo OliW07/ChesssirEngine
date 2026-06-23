@@ -1,0 +1,44 @@
+#!/bin/bash
+set -euo pipefail
+
+# clang-format pre-commit hook
+# Checks all staged C/C++ files for clang-format compliance.
+
+red=
+green=
+nc=
+if [ -t 1 ]; then
+    red='\033[0;31m'
+    green='\033[0;32m'
+    nc='\033[0m'
+fi
+
+if ! command -v clang-format &>/dev/null; then
+    echo -e "${red}clang-format not found. Install it or skip with --no-verify.${nc}" >&2
+    exit 1
+fi
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(c|cpp|cxx|cc|h|hpp|hxx)$' || true)
+
+if [ -z "$staged" ]; then
+    exit 0
+fi
+
+violations=0
+for file in $staged; do
+    if [ ! -f "$file" ]; then
+        continue
+    fi
+    if ! clang-format --dry-run --Werror "$file" &>/dev/null; then
+        echo -e "${red}[!]${nc} $file needs formatting"
+        violations=$((violations + 1))
+    fi
+done
+
+if [ "$violations" -gt 0 ]; then
+    echo -e "${red}Formatting check failed for $violations file(s).${nc}" >&2
+    echo "Run: clang-format -i ${staged//$'\n'/ }"
+    exit 1
+fi
+
+echo -e "${green}Formatting check passed.${nc}"

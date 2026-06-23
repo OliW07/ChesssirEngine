@@ -2,19 +2,20 @@
 #define TYPES
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
+#include <map>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <map>
-#include <array>
-#include <span>
 
-enum Pieces {Bishop,Queen,Rook,King,Pawn,Knight,None};
-enum RaysDirection {North,South,East,West,NorthEast,SouthEast,NorthWest,SouthWest};
-enum Colours {Black,White,Both};
+enum Pieces { Bishop, Queen, Rook, King, Pawn, Knight, None };
+enum RaysDirection { North, South, East, West, NorthEast, SouthEast, NorthWest, SouthWest };
+enum Colours { Black, White, Both };
 
-constexpr std::array<RaysDirection, 8> ALL_DIRECTIONS = {North, East, South, West, NorthEast, SouthEast, NorthWest, SouthWest};
+constexpr std::array<RaysDirection, 8> ALL_DIRECTIONS = {North,     East,      South,     West,
+                                                         NorthEast, SouthEast, NorthWest, SouthWest};
 constexpr std::array<RaysDirection, 4> ORTHOGONAL_DIRECTIONS = {North, East, South, West};
 constexpr std::array<RaysDirection, 4> DIAGONAL_DIRECTIONS = {NorthEast, SouthEast, NorthWest, SouthWest};
 
@@ -26,29 +27,26 @@ const int32_t MATESCORE = 30000;
 
 class PieceList {
     public:
-        int list[2][16];
-        int mapBoardLocToList[64] = {-1};
-        int pieceCount[2]; 
+    int list[2][16];
+    int mapBoardLocToList[64] = {-1};
+    int pieceCount[2];
 
-        PieceList() {
-            std::fill(std::begin(mapBoardLocToList), std::end(mapBoardLocToList), -1);
-            
-            pieceCount[0] = 0;
-            pieceCount[1] = 0;
-        }
+    PieceList() {
+        std::fill(std::begin(mapBoardLocToList), std::end(mapBoardLocToList), -1);
 
-        void addPiece(int pos, Colours colour);
-        void removePiece(int pos, Colours colour);
-        void movePiece(int to, int from, Colours colour);
-        
+        pieceCount[0] = 0;
+        pieceCount[1] = 0;
+    }
+
+    void addPiece(int pos, Colours colour);
+    void removePiece(int pos, Colours colour);
+    void movePiece(int to, int from, Colours colour);
 };
 
-
-struct BoardState{
-
+struct BoardState {
     uint64_t bitboards[3][6] = {0ULL};
     uint64_t occupancy[3] = {0ULL};
-    
+
     bool whiteToMove = 0;
     bool whiteStarts = 1;
     int enPassantSquare = -1;
@@ -57,17 +55,16 @@ struct BoardState{
 
     uint64_t zhash = 0ULL;
 
-    //least three significant bits represent the pieceType enum 0-5 for each piece, the 4th represents colour, white = 0
-    std::array<uint8_t,64> mailBox = {}; 
+    // least three significant bits represent the pieceType enum 0-5 for each piece, the 4th represents colour, white =
+    // 0
+    std::array<uint8_t, 64> mailBox = {};
 
     PieceList pieceList;
 
     uint8_t castlingRights = 0;
 };
 
-
 struct Move {
-    
     bool nullMove = false;
     uint8_t to;
     uint8_t from;
@@ -75,16 +72,10 @@ struct Move {
     int orderScore = 0;
 
     bool operator==(const Move& otherMove) {
-
-        return (nullMove == otherMove.nullMove &&
-                to == otherMove.to &&
-                from == otherMove.from &&
+        return (nullMove == otherMove.nullMove && to == otherMove.to && from == otherMove.from &&
                 promotionPiece == otherMove.promotionPiece);
     }
-
-   
 };
-
 
 struct SearchInfo {
     int wtime = -1;
@@ -97,34 +88,15 @@ struct SearchInfo {
     bool infinite = false;
 };
 
-const std::unordered_map<char,Pieces> promotionCharToPiece = {
-    {'q',Queen},
-    {'r',Rook},
-    {'n',Knight},
-    {'b',Bishop}
-};
+const std::unordered_map<char, Pieces> promotionCharToPiece = {{'q', Queen}, {'r', Rook}, {'n', Knight}, {'b', Bishop}};
 
+const std::unordered_map<char, Pieces> notationToPieceMap = {{'k', King},   {'q', Queen},  {'r', Rook},
+                                                             {'b', Bishop}, {'n', Knight}, {'p', Pawn}};
 
-const std::unordered_map<char,Pieces> notationToPieceMap = {
-    {'k',King},
-    {'q',Queen},
-    {'r',Rook},
-    {'b',Bishop},
-    {'n',Knight},
-    {'p',Pawn}
-};
+const std::unordered_map<Pieces, char> pieceToNotation = {{King, 'k'},   {Queen, 'q'},  {Rook, 'r'},
+                                                          {Bishop, 'b'}, {Knight, 'n'}, {Pawn, 'p'}};
 
-const std::unordered_map<Pieces,char> pieceToNotation = {
-    {King,'k'},
-    {Queen,'q'},
-    {Rook,'r'},
-    {Bishop,'b'},
-    {Knight,'n'},
-    {Pawn,'p'}
-};
-
-
-int convertNotationToInt(const std::string &notation);
+int convertNotationToInt(const std::string& notation);
 int convertLocationToRows(const int location);
 int convertLocationToColumns(const int location);
 
@@ -138,8 +110,8 @@ uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite);
 
 RaysDirection convertPositionsToDirections(int pos1, int pos2);
 
-constexpr std::span<const RaysDirection> SLIDING_DIRECTIONS(Pieces piece){
-    switch(piece){
+constexpr std::span<const RaysDirection> SLIDING_DIRECTIONS(Pieces piece) {
+    switch (piece) {
         case Bishop:
             return DIAGONAL_DIRECTIONS;
         case Rook:
@@ -151,14 +123,11 @@ constexpr std::span<const RaysDirection> SLIDING_DIRECTIONS(Pieces piece){
     }
 }
 
-
-
 Colours getSquareColour(int pos);
 
 std::string convertMoveToAlgebraicNotation(Move move);
 
-Move convertAlgebraicNotationToMove(const std::string &notation);
+Move convertAlgebraicNotationToMove(const std::string& notation);
 std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard);
-
 
 #endif

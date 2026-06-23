@@ -1,55 +1,54 @@
-#include <cstdlib>
-#include <bit>
-#include <string>
-#include <stdexcept>
-#include <algorithm>
-#include <cstdint>
+#include "board.h"
 
+#include <algorithm>
+#include <bit>
+#include <cstdint>
+#include <cstdlib>
+#include <stdexcept>
+#include <string>
+
+#include "Types.h"
+#include "debug.h"
 #include "evaluate.h"
 #include "fenHelper.h"
-#include "board.h"
-#include "Types.h"
 #include "precompute.h"
 #include "utils/Types.h"
-#include "debug.h"
-#include "zobrist.h"
 #include "utils/bitops.h"
+#include "zobrist.h"
 
 using namespace precomputedData;
 using namespace ChessEngine::Utils;
 
-
-void Board::init(){
+void Board::init() {
     initZobristKeys();
     precomputeBitBoardMoves();
 }
 
-uint64_t Board::getFriendlyPieces(int pos){
-    return isPieceWhite(pos) ? state.occupancy[White]: state.occupancy[Black];
+uint64_t Board::getFriendlyPieces(int pos) {
+    return isPieceWhite(pos) ? state.occupancy[White] : state.occupancy[Black];
 }
 
-uint64_t Board::getKingLocation(bool isWhite){
+uint64_t Board::getKingLocation(bool isWhite) {
     return isWhite ? ctz64(state.bitboards[White][King]) : ctz64(state.bitboards[Black][King]);
 }
 
-uint64_t Board::getEnemyPieces(int pos){
-    return isPieceWhite(pos) ? state.occupancy[Black]: state.occupancy[White];
+uint64_t Board::getEnemyPieces(int pos) {
+    return isPieceWhite(pos) ? state.occupancy[Black] : state.occupancy[White];
 }
 
-uint64_t Board::getRay(int pos1, int pos2){
-    
-    RaysDirection direction = convertPositionsToDirections(pos1,pos2);
+uint64_t Board::getRay(int pos1, int pos2) {
+    RaysDirection direction = convertPositionsToDirections(pos1, pos2);
 
     uint64_t ray = rays[direction][pos1];
-   
+
     ray &= ~rays[direction][pos2];
 
     return ray;
 }
 
-uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite){
-    uint64_t *pieceBitBoard = nullptr;
-    switch(pieceEnum){
+uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite) {
+    uint64_t* pieceBitBoard = nullptr;
+    switch (pieceEnum) {
         case 0:
             pieceBitBoard = isWhite ? &state.bitboards[White][Bishop] : &state.bitboards[Black][Bishop];
             break;
@@ -75,92 +74,79 @@ uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite){
     return pieceBitBoard;
 }
 
-
-
-void Board::resetPosition(){
+void Board::resetPosition() {
     BoardState newState;
     state = newState;
-    
+
     enginePlaysWhite = false;
     historyIndex = 0;
-    
-    for(int i = 0; i < 2048; i++){
+
+    for (int i = 0; i < 2048; i++) {
         history[i] = SavedData{};
     }
 }
 
-int Board::getPieceEnum(int pos){
-      //Toggle off the colour of piece, to get left with the enum
-      return state.mailBox[pos] & ~8; 
-
+int Board::getPieceEnum(int pos) {
+    // Toggle off the colour of piece, to get left with the enum
+    return state.mailBox[pos] & ~8;
 }
 
-int Board::getFirstBlocker(int pos, RaysDirection direction){
-    
+int Board::getFirstBlocker(int pos, RaysDirection direction) {
     uint64_t blockers = rays[direction][pos] & (state.occupancy[White] | state.occupancy[Black]);
 
-    if(!blockers) return -1; 
+    if (!blockers)
+        return -1;
 
-    if(direction == North || direction == East || direction == NorthEast || direction == NorthWest) return ctz64(blockers);
-         
+    if (direction == North || direction == East || direction == NorthEast || direction == NorthWest)
+        return ctz64(blockers);
+
     return 63 - clz64(blockers);
-    
 }
 
-void Game::setPosition(std::string fen,MoveList moves){
-    parseFenString(fen,board.state);
-
+void Game::setPosition(std::string fen, MoveList moves) {
+    parseFenString(fen, board.state);
 
     board.state.zhash = generateFullHash(board);
 
-    for(auto &move : moves){
+    for (auto& move : moves) {
         board.makeMove(move);
     }
 
     board.enginePlaysWhite = board.state.whiteToMove;
-    
+
     setFullEval(board);
 }
 
-
-
-
-
-bool Board::isPieceWhite(int pos){
+bool Board::isPieceWhite(int pos) {
     return (1ULL << pos) & state.occupancy[White];
 }
 
-bool Board::isSquareEmpty(int pos){
-
+bool Board::isSquareEmpty(int pos) {
     uint64_t target = 1ULL << pos;
 
     uint64_t allPieces = state.occupancy[White] | state.occupancy[Black];
 
-    
     return !(target & allPieces);
-
 }
 
-bool Game::isDraw(){
-    
+bool Game::isDraw() {
     return isTwoFoldRepition() || isInsufficientMaterial() || isFiftyMoveLimit();
 }
 
-bool Game::isTwoFoldRepition(){
+bool Game::isTwoFoldRepition() {
+    int maxHistoryDepth = std::max(0, board.historyIndex - board.state.halfMoveClock);
 
-    int maxHistoryDepth = std::max(0,board.historyIndex - board.state.halfMoveClock);
-
-    //Start at the last index of the same side to move, only look at the same colour to move as we are checking for duplicates
-    for(int i = board.historyIndex-2; i >= maxHistoryDepth; i-=2){
-        
-        if(board.state.zhash == board.history[i].zhash) return true;
+    // Start at the last index of the same side to move, only look at the same colour to move as we are checking for
+    // duplicates
+    for (int i = board.historyIndex - 2; i >= maxHistoryDepth; i -= 2) {
+        if (board.state.zhash == board.history[i].zhash)
+            return true;
     }
 
     return false;
 }
 
-bool Game::isInsufficientMaterial(){
-
+bool Game::isInsufficientMaterial() {
     if (board.state.bitboards[Both][Queen] | board.state.bitboards[Both][Rook] | board.state.bitboards[Both][Pawn]) {
         return false;
     }
@@ -174,50 +160,46 @@ bool Game::isInsufficientMaterial(){
     int blackMinors = blackKnights + blackBishops;
     int totalMinors = whiteMinors + blackMinors;
 
-    if(totalMinors < 2) return true;
+    if (totalMinors < 2)
+        return true;
 
     if (totalMinors == 2) {
-
         if (whiteKnights == 1 && blackKnights == 1) {
-             return true;
+            return true;
         }
-        
+
         if (whiteBishops == 1 && blackBishops == 1) {
             int whiteBLoc = ctz64(board.state.bitboards[White][Bishop]);
             int blackBLoc = ctz64(board.state.bitboards[Black][Bishop]);
 
-            bool whiteBColor = getSquareColour(whiteBLoc); 
+            bool whiteBColor = getSquareColour(whiteBLoc);
             bool blackBColor = getSquareColour(blackBLoc);
-            
+
             // Draw only if bishops are on the same color
             return (whiteBColor == blackBColor);
         }
     }
 
     // Only a draw if the side with the knights is playing against a lone King.
-    if (whiteMinors == 2 && whiteKnights == 2 && blackMinors == 0) return true;
-    if (blackMinors == 2 && blackKnights ==2 && whiteMinors == 0) return true;
+    if (whiteMinors == 2 && whiteKnights == 2 && blackMinors == 0)
+        return true;
+    if (blackMinors == 2 && blackKnights == 2 && whiteMinors == 0)
+        return true;
 
     return false;
-
 }
 
-bool Game::isFiftyMoveLimit(){
+bool Game::isFiftyMoveLimit() {
     return (board.state.halfMoveClock >= 50);
 }
 
-bool Board::isCapture(Move &move){
+bool Board::isCapture(Move& move) {
     return (state.occupancy[Both] & (1ULL << move.to));
 }
 
-int Board::scoreMove(Move &move){
-    if(isCapture(move)){
+int Board::scoreMove(Move& move) {
+    if (isCapture(move)) {
         return (10 * PieceValues[getPieceEnum(move.to)]) - PieceValues[getPieceEnum(move.from)];
     }
     return 0;
 }
-
-
-
-
-

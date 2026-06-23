@@ -1,13 +1,13 @@
-#include <iostream>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <iostream>
 
-#include "uci.h"
 #include "board.h"
+#include "uci.h"
 
-int main(){
-    //flush buffer for the gui immediately
+int main() {
+    // flush buffer for the gui immediately
     std::setvbuf(stdout, NULL, _IONBF, 0);
     std::setvbuf(stdin, NULL, _IONBF, 0);
 
@@ -16,11 +16,3 @@ int main(){
 
     return 0;
 }
-
-
-
-
-
-
-
-
