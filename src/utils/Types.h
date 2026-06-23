@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <array>
+#include <span>
 
 enum Pieces {Bishop,Queen,Rook,King,Pawn,Knight,None};
 enum RaysDirection {North,South,East,West,NorthEast,SouthEast,NorthWest,SouthWest};
@@ -136,6 +137,19 @@ bool pieceWrapsTheBoard(int pos1, int pos2);
 uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite);
 
 RaysDirection convertPositionsToDirections(int pos1, int pos2);
+
+constexpr std::span<const RaysDirection> SLIDING_DIRECTIONS(Pieces piece){
+    switch(piece){
+        case Bishop:
+            return DIAGONAL_DIRECTIONS;
+        case Rook:
+            return ORTHOGONAL_DIRECTIONS;
+        case Queen:
+            return ALL_DIRECTIONS;
+        default:
+            return {};
+    }
+}
 
 
 
