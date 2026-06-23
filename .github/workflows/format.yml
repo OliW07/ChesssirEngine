@@ -11,18 +11,18 @@ on:
 jobs:
   clang-format:
     name: clang-format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install clang-format
+      - name: Download clang-format (v21)
         run: |
-          wget -q https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 21
-          sudo apt-get install -y clang-format-21
-          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-21 100
+          wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.0/LLVM-21.1.0-Linux-X64.tar.xz
+          tar -xf LLVM-*.tar.xz
+          sudo cp LLVM-*/bin/clang-format /usr/local/bin/
+          rm -rf LLVM-*
+          clang-format --version
 
       - name: Check formatting
         run: |
@@ -32,7 +32,6 @@ jobs:
             exit 0
           fi
           violations=0
-          clang-format --version
           for f in $files; do
             if ! clang-format --dry-run --Werror "$f" 2>/dev/null; then
               diff=$(clang-format "$f" | diff -u "$f" - 2>/dev/null || true)
@@ -42,8 +41,7 @@ jobs:
             fi
           done
           if [ "$violations" -gt 0 ]; then
-            echo "❌ $violations file(s) need formatting."
-            echo "Run: clang-format -i src/**/*.{cpp,h} tools/**/*.{cpp,h}"
+            echo "❌ $violations file(s) need formatting. Run: clang-format -i src/**/*.{cpp,h} tools/**/*.{cpp,h}"
             exit 1
           fi
           echo "✅ All files are correctly formatted."
