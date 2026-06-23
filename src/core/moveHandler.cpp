@@ -452,7 +452,7 @@ void Board::unmakeRookCastle(Move move) {
 
     state.occupancy[rookColour] ^= rookMoveMask;
     state.occupancy[Both] ^= rookMoveMask;
-    state.bitboards[Both][rookColour] ^= rookMoveMask;
+    state.bitboards[Both][Rook] ^= rookMoveMask;
 
     state.mailBox[to] = rookColour == White ? int(Rook) : int(Rook) + 8;
     state.mailBox[from] = 0;
