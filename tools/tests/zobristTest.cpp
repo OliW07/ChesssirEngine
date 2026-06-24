@@ -3,7 +3,7 @@
 
 #include <sstream>
 
-#include "Types.h"
+#include "board.h"
 #include "gtest/gtest.h"
 
 struct GamePlay {
