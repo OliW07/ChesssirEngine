@@ -57,48 +57,57 @@ Move convertAlgebraicNotationToMove(const std::string& notation) {
     }
 }
 
-Colours getSquareColour(int pos) {
+Colour getSquareColour(int pos) {
     int rows = convertLocationToRows(pos);
     int columns = convertLocationToColumns(pos);
 
     if (rows % 2 == 0) {
         if (columns % 2 == 0)
-            return Black;
-        return White;
+            return Colour::Black;
+        return Colour::White;
     }
 
     if (columns % 2 == 0)
-        return White;
+        return Colour::White;
 
-    return Black;
+    return Colour::Black;
 }
 
-void PieceList::addPiece(int pos, Colours colour) {
-    if (pieceCount[colour] >= 16) {
+Colour invertColour(Colour colour) {
+    if (colour == Colour::White)
+        return Colour::Black;
+    if (colour == Colour::Black)
+        return Colour::White;
+
+    throw std::runtime_error("Can only invert White / Black colour");
+}
+
+void PieceList::addPiece(int pos, Colour colour) {
+    if (pieceCount[(size_t)colour] >= 16) {
         std::cout << "DEBUG: Piece list overflow attempt" << std::endl;
         return;
     }
-    list[colour][pieceCount[colour]] = pos;
-    mapBoardLocToList[pos] = pieceCount[colour];
-    pieceCount[colour]++;
+    list[(size_t)colour][pieceCount[(size_t)colour]] = pos;
+    mapBoardLocToList[pos] = pieceCount[(size_t)colour];
+    pieceCount[(size_t)colour]++;
 }
 
-void PieceList::removePiece(int pos, Colours colour) {
+void PieceList::removePiece(int pos, Colour colour) {
     int listIndex = mapBoardLocToList[pos];
 
     // Swap current index with last index, to keep O(1)
-    list[colour][listIndex] = list[colour][pieceCount[colour] - 1];
+    list[(size_t)colour][listIndex] = list[(size_t)colour][pieceCount[(size_t)colour] - 1];
 
-    mapBoardLocToList[list[colour][listIndex]] = listIndex;
+    mapBoardLocToList[list[(size_t)colour][listIndex]] = listIndex;
 
-    pieceCount[colour]--;
+    pieceCount[(size_t)colour]--;
 
     mapBoardLocToList[pos] = -1;
 }
 
-void PieceList::movePiece(int to, int from, Colours colour) {
+void PieceList::movePiece(int to, int from, Colour colour) {
     int listIndex = mapBoardLocToList[from];
-    list[colour][listIndex] = to;
+    list[(size_t)colour][listIndex] = to;
     mapBoardLocToList[from] = -1;
     mapBoardLocToList[to] = listIndex;
 }

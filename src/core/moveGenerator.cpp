@@ -3,13 +3,10 @@
 #include <stdexcept>
 
 #include "Types.h"
-#include "attackHandler.h"
+#include "bitops.h"
 #include "board.h"
-#include "debug.h"
 #include "evaluate.h"
 #include "precompute.h"
-#include "utils/Types.h"
-#include "utils/bitops.h"
 
 using namespace precomputedData;
 using namespace ChessEngine::Utils;
@@ -19,7 +16,7 @@ uint64_t MoveGenerator::getPseudoLegalMoves(const int pos) {
         return 0ULL;
 
     uint64_t pseudoLegalMoves = game.attackHandler.getAttacks(pos);
-    bool isWhite = game.board.isPieceWhite(pos);
+    bool isWhite = game.board.getColour(pos) == Colour::White;
 
     enum Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
 
@@ -28,13 +25,13 @@ uint64_t MoveGenerator::getPseudoLegalMoves(const int pos) {
         uint64_t* pawnMoves = isWhite ? &whitePawnMoves[pos] : &blackPawnMoves[pos];
 
         // Pawns can't move onto their own pieces or friendly pieces
-        pseudoLegalMoves |= (*pawnMoves & ~game.board.state.occupancy[Both]);
+        pseudoLegalMoves |= (*pawnMoves & ~game.board.state.occupancy(Colour::Both));
 
         int oneStepIndex = isWhite ? pos + 8 : pos - 8;
 
         // Check if the single push is blocked, if so, the double push is also blocked
         if (oneStepIndex >= 0 && oneStepIndex < 64) {
-            if ((1ULL << oneStepIndex) & game.board.state.occupancy[Both]) {
+            if ((1ULL << oneStepIndex) & game.board.state.occupancy(Colour::Both)) {
                 int twoStepIndex = isWhite ? pos + 16 : pos - 16;
                 if (twoStepIndex >= 0 && twoStepIndex < 64) {
                     pseudoLegalMoves &= ~(1ULL << twoStepIndex);
@@ -46,26 +43,30 @@ uint64_t MoveGenerator::getPseudoLegalMoves(const int pos) {
     // Add castling
 
     if (pieceType == King && game.board.state.castlingRights > 0) {
-        if (isWhite && (game.board.state.castlingRights & 8) && !game.attackHandler.isSquareAttacked(5, false) &&
-            !game.attackHandler.isSquareAttacked(6, false) && game.board.isSquareEmpty(5) &&
+        if (isWhite && (game.board.state.castlingRights & 8) &&
+            !game.attackHandler.isSquareAttacked(5, Colour::Black) &&
+            !game.attackHandler.isSquareAttacked(6, Colour::Black) && game.board.isSquareEmpty(5) &&
             game.board.isSquareEmpty(6)) {
             // White kingside castling square
             pseudoLegalMoves |= (1ULL << 6);
         }
-        if (isWhite && (game.board.state.castlingRights & 4) && !game.attackHandler.isSquareAttacked(3, false) &&
-            !game.attackHandler.isSquareAttacked(2, false) && game.board.isSquareEmpty(3) &&
+        if (isWhite && (game.board.state.castlingRights & 4) &&
+            !game.attackHandler.isSquareAttacked(3, Colour::Black) &&
+            !game.attackHandler.isSquareAttacked(2, Colour::Black) && game.board.isSquareEmpty(3) &&
             game.board.isSquareEmpty(2) && game.board.isSquareEmpty(1)) {
             // White queenside castling square
             pseudoLegalMoves |= (1ULL << 2);
         }
-        if (!isWhite && (game.board.state.castlingRights & 2) && !game.attackHandler.isSquareAttacked(61, true) &&
-            !game.attackHandler.isSquareAttacked(62, true) && game.board.isSquareEmpty(61) &&
+        if (!isWhite && (game.board.state.castlingRights & 2) &&
+            !game.attackHandler.isSquareAttacked(61, Colour::White) &&
+            !game.attackHandler.isSquareAttacked(62, Colour::White) && game.board.isSquareEmpty(61) &&
             game.board.isSquareEmpty(62)) {
             // Black kingside castling square
             pseudoLegalMoves |= (1ULL << 62);
         }
-        if (!isWhite && (game.board.state.castlingRights & 1) && !game.attackHandler.isSquareAttacked(58, true) &&
-            !game.attackHandler.isSquareAttacked(59, true) && game.board.isSquareEmpty(57) &&
+        if (!isWhite && (game.board.state.castlingRights & 1) &&
+            !game.attackHandler.isSquareAttacked(58, Colour::White) &&
+            !game.attackHandler.isSquareAttacked(59, Colour::White) && game.board.isSquareEmpty(57) &&
             game.board.isSquareEmpty(58) && game.board.isSquareEmpty(59)) {
             // Black queenside castling square
             pseudoLegalMoves |= (1ULL << 58);
@@ -80,9 +81,11 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
 
     enum Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
 
-    bool isWhite = game.board.isPieceWhite(pos);
+    bool isWhite = game.board.getColour(pos) == Colour::White;
+    Colour colour = isWhite ? Colour::White : Colour::Black;
+    Colour enemyColour = invertColour(colour);
 
-    int kingLocation = game.board.getKingLocation(isWhite);
+    int kingLocation = game.board.getKingLocation(colour);
 
     if (pieceType == King) {
         // For each move, check the square is not controlled by the enemy and disallow king from castling whilst in
@@ -93,17 +96,17 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
             int move = ctz64(movesClone);
             movesClone &= (movesClone - 1);
 
-            if (game.attackHandler.isSquareAttacked(move, !isWhite))
+            if (game.attackHandler.isSquareAttacked(move, enemyColour))
                 legalMoves ^= (1ULL << move);
 
             if (abs(convertLocationToColumns(move) - convertLocationToColumns(pos)) > 1 &&
-                (game.attackHandler.isSquareAttacked(pos, !isWhite)))
+                (game.attackHandler.isSquareAttacked(pos, enemyColour)))
                 legalMoves ^= (1ULL << move);
         }
 
         // For each sliding piece attacker, remove the squares that the king hides inline with the attacking ray
 
-        uint64_t attackers = game.attackHandler.getAttackers(kingLocation, !isWhite);
+        uint64_t attackers = game.attackHandler.getAttackers(kingLocation, enemyColour);
 
         while (attackers) {
             int attackerLoc = ctz64(attackers);
@@ -120,8 +123,8 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
 
     }
 
-    else if (game.attackHandler.isSquareAttacked(kingLocation, !isWhite)) {
-        uint64_t attackers = game.attackHandler.getAttackers(kingLocation, !isWhite);
+    else if (game.attackHandler.isSquareAttacked(kingLocation, enemyColour)) {
+        uint64_t attackers = game.attackHandler.getAttackers(kingLocation, enemyColour);
 
         // If the king is attacked more than once, the king is the only piece that can move;
         if (countOnes(attackers) > 1)
@@ -148,8 +151,8 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
         }
     }
     // If the piece is pinned, limit its movement to the ray between itself and the king
-    if (game.attackHandler.getPinnedPieces(isWhite) & (1ULL << pos)) {
-        int kingLocation = game.board.getKingLocation(isWhite);
+    if (game.attackHandler.getPinnedPieces(colour) & (1ULL << pos)) {
+        int kingLocation = game.board.getKingLocation(colour);
 
         RaysDirection direction = convertPositionsToDirections(kingLocation, pos);
 
@@ -169,18 +172,18 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
             // If the move is diagonal and to an empty square it is enpassantenpassantVictimLoc
             if ((convertLocationToColumns(pos) - convertLocationToColumns(move) != 0) &&
                 (convertLocationToRows(pos) - convertLocationToRows(move) != 0) &&
-                !((1ULL << move) & game.board.state.occupancy[Both])) {
+                !((1ULL << move) & game.board.state.occupancy(Colour::Both))) {
                 // Temporarily remove the pawn, to check if the enpassant victim is pinned
-                uint64_t* pawnBitBoard =
-                    isWhite ? &game.board.state.bitboards[White][Pawn] : &game.board.state.bitboards[Black][Pawn];
+                uint64_t* pawnBitBoard = isWhite ? &game.board.state.bitboards(Colour::White, Pawn)
+                                                 : &game.board.state.bitboards(Colour::Black, Pawn);
 
                 uint64_t pawnMask = (1ULL << pos);
 
                 *pawnBitBoard ^= pawnMask;
-                game.board.state.occupancy[Both] ^= pawnMask;
-                game.board.state.occupancy[isWhite] ^= pawnMask;
+                game.board.state.occupancy(Colour::Both) ^= pawnMask;
+                game.board.state.occupancy(colour) ^= pawnMask;
 
-                if ((game.attackHandler.getPinnedPieces(isWhite, true) & (1ULL << enpassantVictimLoc)) &&
+                if ((game.attackHandler.getPinnedPieces(colour, true) & (1ULL << enpassantVictimLoc)) &&
                     (convertLocationToRows(pos) == convertLocationToRows(kingLocation))) {
                     legalMoves ^= (1ULL << move);
                 }
@@ -188,8 +191,8 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
                 // Add back the pawn we removed
 
                 *pawnBitBoard ^= pawnMask;
-                game.board.state.occupancy[Both] ^= pawnMask;
-                game.board.state.occupancy[isWhite] ^= pawnMask;
+                game.board.state.occupancy(Colour::Both) ^= pawnMask;
+                game.board.state.occupancy(colour) ^= pawnMask;
             }
         }
     }
@@ -207,13 +210,11 @@ uint64_t MoveGenerator::getLegalMoves(const int pos) {
 
     enum Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
 
-    bool isWhite = game.board.isPieceWhite(pos);
-
     // Remove pawns promting, handling seperately with multiple outcomes
 
     if (pieceType == Pawn) {
-        int promotionRow = isWhite ? 7 : 0;
-        legalMoves &= ~(rankMasks[promotionRow]);
+        int promotionRank = game.board.getColour(pos) == Colour::White ? 7 : 0;
+        legalMoves &= ~(rankMasks[promotionRank]);
     }
 
     return legalMoves;
@@ -224,7 +225,7 @@ uint64_t MoveGenerator::getPromotionMoves(const int pos) {
     if (pieceType != Pawn)
         return 0ULL;
 
-    uint64_t promotionRank = game.board.isPieceWhite(pos) ? 7 : 0;
+    int promotionRank = game.board.getColour(pos) == Colour::White ? 7 : 0;
 
     uint64_t promotionMoves = getPseudoLegalMoves(pos) & rankMasks[promotionRank];
 
@@ -234,10 +235,10 @@ uint64_t MoveGenerator::getPromotionMoves(const int pos) {
 MoveList MoveGenerator::getAllMoves() {
     MoveList moves;
 
-    Colours activeColour = (Colours)game.board.state.whiteToMove;
+    Colour activeColour = (Colour)game.board.state.whiteToMove;
 
-    for (int i = 0; i < game.board.state.pieceList.pieceCount[activeColour]; i++) {
-        int pieceLoc = game.board.state.pieceList.list[activeColour][i];
+    for (int i = 0; i < game.board.state.pieceList.pieceCount[(size_t)activeColour]; i++) {
+        int pieceLoc = game.board.state.pieceList.list[(size_t)activeColour][i];
         uint64_t legalMoves = getLegalMoves(pieceLoc);
         uint64_t promotionMoves = getPromotionMoves(pieceLoc);
 
@@ -271,10 +272,10 @@ MoveList MoveGenerator::getAllMoves() {
 MoveList MoveGenerator::getAllCaptures() {
     MoveList moves;
 
-    Colours activeColour = (Colours)game.board.state.whiteToMove;
+    Colour activeColour = (Colour)game.board.state.whiteToMove;
 
-    for (int i = 0; i < game.board.state.pieceList.pieceCount[activeColour]; i++) {
-        int pieceLoc = game.board.state.pieceList.list[activeColour][i];
+    for (int i = 0; i < game.board.state.pieceList.pieceCount[(size_t)activeColour]; i++) {
+        int pieceLoc = game.board.state.pieceList.list[(size_t)activeColour][i];
         uint64_t legalMoves = getLegalMoves(pieceLoc);
         uint64_t promotionMoves = getPromotionMoves(pieceLoc);
 
@@ -287,7 +288,7 @@ MoveList MoveGenerator::getAllCaptures() {
 
             bool isEnPassant = game.board.state.enPassantSquare != -1 && move.to == game.board.state.enPassantSquare;
 
-            if ((game.board.state.occupancy[Both] & (1ULL << move.to)) || isEnPassant) {
+            if ((game.board.state.occupancy(Colour::Both) & (1ULL << move.to)) || isEnPassant) {
                 moves.add(move);
                 setCaptureScore(move, game.board);
                 if (isEnPassant) {
@@ -303,7 +304,7 @@ MoveList MoveGenerator::getAllCaptures() {
             for (Pieces promotionPiece : {Rook, Knight, Bishop, Queen}) {
                 move.promotionPiece = promotionPiece;
 
-                if (game.board.state.occupancy[Both] & (1ULL << move.to)) {
+                if (game.board.state.occupancy(Colour::Both) & (1ULL << move.to)) {
                     moves.add(move);
                     setCaptureScore(move, game.board);
                 }

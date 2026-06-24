@@ -26,11 +26,12 @@ void Board::makeMove(Move move) {
         state.zhash ^= Zobrist.enPassantKeys[convertLocationToColumns(state.enPassantSquare)];
 
     Pieces pieceType = (Pieces)getPieceEnum(move.from);
-    bool isWhite = isPieceWhite(move.from);
+    bool isWhite = getColour(move.from) == Colour::White;
+    Colour colour = isWhite ? Colour::White : Colour::Black;
 
     uint64_t* pieceBitBoard = getBitBoardFromPiece((int)pieceType, isWhite);
 
-    if ((1ULL << move.to) & state.occupancy[Both]) {
+    if ((1ULL << move.to) & state.occupancy(Colour::Both)) {
         handleCapture(move.from, move.to, isWhite);
     }
 
@@ -41,12 +42,12 @@ void Board::makeMove(Move move) {
     uint64_t moveMask = (1ULL << move.to) | (1ULL << move.from);
 
     *pieceBitBoard ^= moveMask;
-    state.bitboards[Both][pieceType] ^= moveMask;
+    state.bitboards(Colour::Both, pieceType) ^= moveMask;
 
     state.mailBox[move.to] = convertPieceToBinary(pieceType, isWhite);
     state.mailBox[move.from] = 0;
 
-    state.pieceList.movePiece(move.to, move.from, (Colours)isWhite);
+    state.pieceList.movePiece(move.to, move.from, (Colour)isWhite);
 
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.to];
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.from];
@@ -71,10 +72,10 @@ void Board::makeMove(Move move) {
         handleRookCastle(move.to);
     }
 
-    state.occupancy[isWhite] ^= (1ULL << move.to);
-    state.occupancy[isWhite] ^= (1ULL << move.from);
-    state.occupancy[Both] ^= (1ULL << move.from);
-    state.occupancy[Both] |= (1ULL << move.to);
+    state.occupancy(colour) ^= (1ULL << move.to);
+    state.occupancy(colour) ^= (1ULL << move.from);
+    state.occupancy(Colour::Both) ^= (1ULL << move.from);
+    state.occupancy(Colour::Both) |= (1ULL << move.to);
 
     if (state.whiteToMove != state.whiteStarts)
         state.fullMoveClock++;
@@ -95,6 +96,8 @@ void Board::unmakeMove(Move move) {
 
     Pieces pieceType = restored.promotion ? Pawn : (Pieces)getPieceEnum(move.to);
     bool isWhite = state.whiteToMove;
+    Colour colour = isWhite ? Colour::White : Colour::Black;
+    Colour enemyColour = isWhite ? Colour::Black : Colour::White;
 
     uint64_t* pieceBitBoard = getBitBoardFromPiece((int)pieceType, isWhite);
 
@@ -108,8 +111,8 @@ void Board::unmakeMove(Move move) {
         Pieces promotionType = (Pieces)getPieceEnum(move.to);
         uint64_t* promotedPieceBitBoard = getBitBoardFromPiece(promotionType, isWhite);
         *promotedPieceBitBoard ^= newPieceMask;
-        state.bitboards[Both][promotionType] ^= newPieceMask;
-        state.bitboards[Both][Pawn] ^= newPieceMask;
+        state.bitboards(Colour::Both, promotionType) ^= newPieceMask;
+        state.bitboards(Colour::Both, Pawn) ^= newPieceMask;
         state.zhash ^= Zobrist.pieceKeys[isWhite][Pawn][move.to];
         state.zhash ^= Zobrist.pieceKeys[isWhite][promotionType][move.to];
 
@@ -143,15 +146,15 @@ void Board::unmakeMove(Move move) {
     uint64_t moveMask = (1ULL << move.to) | (1ULL << move.from);
 
     *pieceBitBoard ^= moveMask;
-    state.bitboards[Both][pieceType] ^= moveMask;
+    state.bitboards(Colour::Both, pieceType) ^= moveMask;
 
     state.mailBox[move.from] = convertPieceToBinary(pieceType, isWhite);
     state.mailBox[move.to] = 0;
 
-    state.pieceList.movePiece(move.from, move.to, (Colours)isWhite);
+    state.pieceList.movePiece(move.from, move.to, (Colour)isWhite);
 
-    state.occupancy[isWhite] ^= moveMask;
-    state.occupancy[Both] ^= moveMask;
+    state.occupancy(colour) ^= moveMask;
+    state.occupancy(Colour::Both) ^= moveMask;
 
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.to];
     state.zhash ^= Zobrist.pieceKeys[isWhite][pieceType][move.from];
@@ -171,14 +174,14 @@ void Board::unmakeMove(Move move) {
 
         eval += evaluatePieceSquare(Pawn, capturedPawnPos, !isWhite, false);
 
-        state.occupancy[!isWhite] ^= pawnMask;
-        state.occupancy[Both] ^= pawnMask;
+        state.occupancy(enemyColour) ^= pawnMask;
+        state.occupancy(Colour::Both) ^= pawnMask;
 
-        state.bitboards[Both][Pawn] ^= pawnMask;
+        state.bitboards(Colour::Both, Pawn) ^= pawnMask;
         state.zhash ^= Zobrist.pieceKeys[!isWhite][Pawn][capturedPawnPos];
 
         state.mailBox[capturedPawnPos] = convertPieceToBinary(Pawn, !isWhite);
-        state.pieceList.addPiece(capturedPawnPos, (Colours)!isWhite);
+        state.pieceList.addPiece(capturedPawnPos, (Colour)!isWhite);
 
     } else if (restored.capturedPiece != None) {
         uint64_t* capturedBitBoard = getBitBoardFromPiece(restored.capturedPiece, !isWhite);
@@ -186,14 +189,14 @@ void Board::unmakeMove(Move move) {
 
         *capturedBitBoard ^= capturedMask;
 
-        state.occupancy[!isWhite] ^= capturedMask;
-        state.occupancy[Both] ^= capturedMask;
+        state.occupancy(enemyColour) ^= capturedMask;
+        state.occupancy(Colour::Both) ^= capturedMask;
 
-        state.bitboards[Both][restored.capturedPiece] ^= capturedMask;
+        state.bitboards(Colour::Both, restored.capturedPiece) ^= capturedMask;
         state.zhash ^= Zobrist.pieceKeys[!isWhite][restored.capturedPiece][move.to];
 
         state.mailBox[move.to] = convertPieceToBinary(restored.capturedPiece, !isWhite);
-        state.pieceList.addPiece(move.to, (Colours)!isWhite);
+        state.pieceList.addPiece(move.to, (Colour)!isWhite);
 
         eval -= (isWhite ? PieceValues[restored.capturedPiece] : -PieceValues[restored.capturedPiece]);
         eval += evaluatePieceSquare(restored.capturedPiece, move.to, !isWhite, false);
@@ -236,13 +239,15 @@ void Board::handleCapture(int from, int to, bool isWhite) {
     uint64_t* capturedBitBoard = getBitBoardFromPiece(capturedPiece, !isWhite);
     uint64_t capturedMask = (1ULL << to);
 
+    Colour enemyColour = isWhite ? Colour::Black : Colour::White;
+
     // Toggle off the captured piece
     *capturedBitBoard ^= capturedMask;
-    state.occupancy[!isWhite] ^= capturedMask;
+    state.occupancy(enemyColour) ^= capturedMask;
     state.mailBox[to] = convertPieceToBinary(capturedPiece, isWhite);
-    state.pieceList.removePiece(to, (Colours)!isWhite);
+    state.pieceList.removePiece(to, (Colour)!isWhite);
 
-    state.bitboards[Both][capturedPiece] ^= capturedMask;
+    state.bitboards(Colour::Both, capturedPiece) ^= capturedMask;
 
     state.zhash ^= Zobrist.pieceKeys[!isWhite][capturedPiece][to];
 
@@ -259,13 +264,14 @@ void Board::handleEnpassant(int from, int to, bool isWhite) {
     eval += isWhite ? PieceValues[Pawn] : -PieceValues[Pawn];
     eval -= evaluatePieceSquare(Pawn, capturePos, !isWhite, false);
 
+    Colour enemyColour = isWhite ? Colour::Black : Colour::White;
     *capturedBitBoard ^= captureMask;
-    state.occupancy[!isWhite] ^= captureMask;
-    state.occupancy[Both] ^= captureMask;
-    state.bitboards[Both][Pawn] ^= captureMask;
+    state.occupancy(enemyColour) ^= captureMask;
+    state.occupancy(Colour::Both) ^= captureMask;
+    state.bitboards(Colour::Both, Pawn) ^= captureMask;
     state.mailBox[capturePos] = 0;
     state.zhash ^= Zobrist.pieceKeys[!isWhite][Pawn][capturePos];
-    state.pieceList.removePiece(capturePos, (Colours)!isWhite);
+    state.pieceList.removePiece(capturePos, (Colour)!isWhite);
     state.halfMoveClock = -1;
     history[historyIndex].capturedPiece = Pawn;
     history[historyIndex].enPassantCapture = true;
@@ -321,8 +327,8 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
         uint64_t newPieceMask = (1ULL << to);
         *newPieceBitBoard |= newPieceMask;
         pawnBitBoard ^= newPieceMask;
-        state.bitboards[Both][promotionPiece] ^= newPieceMask;
-        state.bitboards[Both][Pawn] ^= newPieceMask;
+        state.bitboards(Colour::Both, promotionPiece) ^= newPieceMask;
+        state.bitboards(Colour::Both, Pawn) ^= newPieceMask;
         state.mailBox[to] = convertPieceToBinary(promotionPiece, isWhite);
         // Toggle on promotion piece hash, toggle off pawn hash, as the makeMove will toggle it on later, so this
         // cancels out and ensures no pawn remains on the backrank.
@@ -345,14 +351,14 @@ void Board::handlePawnMove(int from, int to, bool isWhite, Pieces promotionPiece
 }
 
 void Board::handleRookCastle(int newKingLoc) {
-    Colours rookColour;
+    Colour rookColour;
     int to;
     int from;
 
     switch (newKingLoc) {
         case (2):
 
-            rookColour = White;
+            rookColour = Colour::White;
             to = 3;
             from = 0;
 
@@ -360,7 +366,7 @@ void Board::handleRookCastle(int newKingLoc) {
 
         case (6):
 
-            rookColour = White;
+            rookColour = Colour::White;
             to = 5;
             from = 7;
 
@@ -368,7 +374,7 @@ void Board::handleRookCastle(int newKingLoc) {
 
         case (58):
 
-            rookColour = Black;
+            rookColour = Colour::Black;
             to = 59;
             from = 56;
 
@@ -376,7 +382,7 @@ void Board::handleRookCastle(int newKingLoc) {
 
         case (62):
 
-            rookColour = Black;
+            rookColour = Colour::Black;
             to = 61;
             from = 63;
 
@@ -387,32 +393,33 @@ void Board::handleRookCastle(int newKingLoc) {
     }
 
     uint64_t rookMoveMask = (1ULL << from) | (1ULL << to);
-    state.bitboards[rookColour][Rook] ^= rookMoveMask;
+    state.bitboards(rookColour, Rook) ^= rookMoveMask;
 
-    state.occupancy[rookColour] ^= rookMoveMask;
-    state.occupancy[Both] ^= rookMoveMask;
-    state.bitboards[Both][Rook] ^= rookMoveMask;
+    state.occupancy(rookColour) ^= rookMoveMask;
+    state.occupancy(Colour::Both) ^= rookMoveMask;
+    state.bitboards(Colour::Both, Rook) ^= rookMoveMask;
 
-    state.mailBox[to] = rookColour == White ? int(Rook) : int(Rook) + 8;
+    state.mailBox[to] = rookColour == Colour::White ? int(Rook) : int(Rook) + 8;
     state.mailBox[from] = 0;
 
-    state.zhash ^= (Zobrist.pieceKeys[rookColour][Rook][from] ^ Zobrist.pieceKeys[rookColour][Rook][to]);
+    state.zhash ^=
+        (Zobrist.pieceKeys[(size_t)rookColour][Rook][from] ^ Zobrist.pieceKeys[(size_t)rookColour][Rook][to]);
 
     state.pieceList.movePiece(to, from, rookColour);
 
-    eval += evaluatePieceSquare(Rook, to, rookColour == White, false);
-    eval -= evaluatePieceSquare(Rook, from, rookColour == White, false);
+    eval += evaluatePieceSquare(Rook, to, rookColour == Colour::White, false);
+    eval -= evaluatePieceSquare(Rook, from, rookColour == Colour::White, false);
 }
 
 void Board::unmakeRookCastle(Move move) {
-    Colours rookColour;
+    Colour rookColour;
     int to;
     int from;
 
     switch (move.to) {
         case (2):
 
-            rookColour = White;
+            rookColour = Colour::White;
             to = 0;
             from = 3;
 
@@ -420,7 +427,7 @@ void Board::unmakeRookCastle(Move move) {
 
         case (6):
 
-            rookColour = White;
+            rookColour = Colour::White;
             to = 7;
             from = 5;
 
@@ -428,7 +435,7 @@ void Board::unmakeRookCastle(Move move) {
 
         case (58):
 
-            rookColour = Black;
+            rookColour = Colour::Black;
             to = 56;
             from = 59;
 
@@ -436,7 +443,7 @@ void Board::unmakeRookCastle(Move move) {
 
         case (62):
 
-            rookColour = Black;
+            rookColour = Colour::Black;
             to = 63;
             from = 61;
 
@@ -448,19 +455,20 @@ void Board::unmakeRookCastle(Move move) {
 
     uint64_t rookMoveMask = (1ULL << to) | (1ULL << from);
 
-    state.bitboards[rookColour][Rook] ^= rookMoveMask;
+    state.bitboards(rookColour, Rook) ^= rookMoveMask;
 
-    state.occupancy[rookColour] ^= rookMoveMask;
-    state.occupancy[Both] ^= rookMoveMask;
-    state.bitboards[Both][Rook] ^= rookMoveMask;
+    state.occupancy(rookColour) ^= rookMoveMask;
+    state.occupancy(Colour::Both) ^= rookMoveMask;
+    state.bitboards(Colour::Both, Rook) ^= rookMoveMask;
 
-    state.mailBox[to] = rookColour == White ? int(Rook) : int(Rook) + 8;
+    state.mailBox[to] = rookColour == Colour::White ? int(Rook) : int(Rook) + 8;
     state.mailBox[from] = 0;
 
-    state.zhash ^= (Zobrist.pieceKeys[rookColour][Rook][to] ^ Zobrist.pieceKeys[rookColour][Rook][from]);
+    state.zhash ^=
+        (Zobrist.pieceKeys[(size_t)rookColour][Rook][to] ^ Zobrist.pieceKeys[(size_t)rookColour][Rook][from]);
 
     state.pieceList.movePiece(to, from, rookColour);
 
-    eval += evaluatePieceSquare(Rook, to, rookColour == White, false);
-    eval -= evaluatePieceSquare(Rook, from, rookColour == White, false);
+    eval += evaluatePieceSquare(Rook, to, rookColour == Colour::White, false);
+    eval -= evaluatePieceSquare(Rook, from, rookColour == Colour::White, false);
 }

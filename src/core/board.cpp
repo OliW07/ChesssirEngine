@@ -3,17 +3,13 @@
 #include <algorithm>
 #include <bit>
 #include <cstdint>
-#include <cstdlib>
 #include <stdexcept>
 #include <string>
 
-#include "Types.h"
-#include "debug.h"
+#include "bitops.h"
 #include "evaluate.h"
 #include "fenHelper.h"
 #include "precompute.h"
-#include "utils/Types.h"
-#include "utils/bitops.h"
 #include "zobrist.h"
 
 using namespace precomputedData;
@@ -25,15 +21,15 @@ void Board::init() {
 }
 
 uint64_t Board::getFriendlyPieces(int pos) {
-    return isPieceWhite(pos) ? state.occupancy[White] : state.occupancy[Black];
+    return state.occupancy(getColour(pos));
 }
 
-uint64_t Board::getKingLocation(bool isWhite) {
-    return isWhite ? ctz64(state.bitboards[White][King]) : ctz64(state.bitboards[Black][King]);
+uint64_t Board::getKingLocation(Colour colour) {
+    return ctz64(state.bitboards(colour, King));
 }
 
 uint64_t Board::getEnemyPieces(int pos) {
-    return isPieceWhite(pos) ? state.occupancy[Black] : state.occupancy[White];
+    return state.occupancy(invertColour(getColour(pos)));
 }
 
 uint64_t Board::getRay(int pos1, int pos2) {
@@ -50,22 +46,22 @@ uint64_t* Board::getBitBoardFromPiece(int pieceEnum, bool isWhite) {
     uint64_t* pieceBitBoard = nullptr;
     switch (pieceEnum) {
         case 0:
-            pieceBitBoard = isWhite ? &state.bitboards[White][Bishop] : &state.bitboards[Black][Bishop];
+            pieceBitBoard = isWhite ? &state.bitboards(Colour::White, Bishop) : &state.bitboards(Colour::Black, Bishop);
             break;
         case 1:
-            pieceBitBoard = isWhite ? &state.bitboards[White][Queen] : &state.bitboards[Black][Queen];
+            pieceBitBoard = isWhite ? &state.bitboards(Colour::White, Queen) : &state.bitboards(Colour::Black, Queen);
             break;
         case 2:
-            pieceBitBoard = isWhite ? &state.bitboards[White][Rook] : &state.bitboards[Black][Rook];
+            pieceBitBoard = isWhite ? &state.bitboards(Colour::White, Rook) : &state.bitboards(Colour::Black, Rook);
             break;
         case 3:
-            pieceBitBoard = isWhite ? &state.bitboards[White][King] : &state.bitboards[Black][King];
+            pieceBitBoard = isWhite ? &state.bitboards(Colour::White, King) : &state.bitboards(Colour::Black, King);
             break;
         case 4:
-            pieceBitBoard = isWhite ? &state.bitboards[White][Pawn] : &state.bitboards[Black][Pawn];
+            pieceBitBoard = isWhite ? &state.bitboards(Colour::White, Pawn) : &state.bitboards(Colour::Black, Pawn);
             break;
         case 5:
-            pieceBitBoard = isWhite ? &state.bitboards[White][Knight] : &state.bitboards[Black][Knight];
+            pieceBitBoard = isWhite ? &state.bitboards(Colour::White, Knight) : &state.bitboards(Colour::Black, Knight);
             break;
         default:
             throw std::runtime_error("Invalid piece enum");
@@ -92,7 +88,7 @@ int Board::getPieceEnum(int pos) {
 }
 
 int Board::getFirstBlocker(int pos, RaysDirection direction) {
-    uint64_t blockers = rays[direction][pos] & (state.occupancy[White] | state.occupancy[Black]);
+    uint64_t blockers = rays[direction][pos] & (state.occupancy(Colour::White) | state.occupancy(Colour::Black));
 
     if (!blockers)
         return -1;
@@ -117,14 +113,17 @@ void Game::setPosition(std::string fen, MoveList moves) {
     setFullEval(board);
 }
 
-bool Board::isPieceWhite(int pos) {
-    return (1ULL << pos) & state.occupancy[White];
+Colour Board::getColour(int pos) {
+    if ((1ULL << pos) & state.occupancy(Colour::White)) {
+        return Colour::White;
+    }
+    return Colour::Black;
 }
 
 bool Board::isSquareEmpty(int pos) {
     uint64_t target = 1ULL << pos;
 
-    uint64_t allPieces = state.occupancy[White] | state.occupancy[Black];
+    uint64_t allPieces = state.occupancy(Colour::White) | state.occupancy(Colour::Black);
 
     return !(target & allPieces);
 }
@@ -147,14 +146,15 @@ bool Game::isTwoFoldRepition() {
 }
 
 bool Game::isInsufficientMaterial() {
-    if (board.state.bitboards[Both][Queen] | board.state.bitboards[Both][Rook] | board.state.bitboards[Both][Pawn]) {
+    if (board.state.bitboards(Colour::Both, Queen) | board.state.bitboards(Colour::Both, Rook) |
+        board.state.bitboards(Colour::Both, Pawn)) {
         return false;
     }
 
-    int whiteKnights = std::popcount(board.state.bitboards[White][Knight]);
-    int blackKnights = std::popcount(board.state.bitboards[Black][Knight]);
-    int whiteBishops = std::popcount(board.state.bitboards[White][Bishop]);
-    int blackBishops = std::popcount(board.state.bitboards[Black][Bishop]);
+    int whiteKnights = std::popcount(board.state.bitboards(Colour::White, Knight));
+    int blackKnights = std::popcount(board.state.bitboards(Colour::Black, Knight));
+    int whiteBishops = std::popcount(board.state.bitboards(Colour::White, Bishop));
+    int blackBishops = std::popcount(board.state.bitboards(Colour::Black, Bishop));
 
     int whiteMinors = whiteKnights + whiteBishops;
     int blackMinors = blackKnights + blackBishops;
@@ -169,11 +169,11 @@ bool Game::isInsufficientMaterial() {
         }
 
         if (whiteBishops == 1 && blackBishops == 1) {
-            int whiteBLoc = ctz64(board.state.bitboards[White][Bishop]);
-            int blackBLoc = ctz64(board.state.bitboards[Black][Bishop]);
+            int whiteBLoc = ctz64(board.state.bitboards(Colour::White, Bishop));
+            int blackBLoc = ctz64(board.state.bitboards(Colour::Black, Bishop));
 
-            bool whiteBColor = getSquareColour(whiteBLoc);
-            bool blackBColor = getSquareColour(blackBLoc);
+            Colour whiteBColor = getSquareColour(whiteBLoc);
+            Colour blackBColor = getSquareColour(blackBLoc);
 
             // Draw only if bishops are on the same color
             return (whiteBColor == blackBColor);
@@ -194,7 +194,7 @@ bool Game::isFiftyMoveLimit() {
 }
 
 bool Board::isCapture(Move& move) {
-    return (state.occupancy[Both] & (1ULL << move.to));
+    return (state.occupancy(Colour::Both) & (1ULL << move.to));
 }
 
 int Board::scoreMove(Move& move) {

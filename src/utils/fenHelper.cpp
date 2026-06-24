@@ -3,8 +3,7 @@
 #include <cctype>
 #include <sstream>
 
-#include "board.h"
-#include "utils/Types.h"
+#include "Types.h"
 
 void parseFenString(std::string fen, BoardState& state) {
     uint64_t boardIndex = 56;
@@ -21,17 +20,18 @@ void parseFenString(std::string fen, BoardState& state) {
             uint64_t* pieceBitBoard = nullptr;
 
             bool isWhite = std::isupper(uCharacter);
+            Colour colour = isWhite ? Colour::White : Colour::Black;
             Pieces pieceType = notationToPieceMap.at(std::tolower(uCharacter));
 
-            pieceBitBoard = &state.bitboards[isWhite][pieceType];
+            pieceBitBoard = &state.bitboards(colour, pieceType);
             uint64_t pieceMask = (1ULL << boardIndex);
 
             *pieceBitBoard |= pieceMask;
-            state.occupancy[isWhite] ^= pieceMask;
-            state.occupancy[Both] ^= pieceMask;
-            state.bitboards[Both][pieceType] ^= pieceMask;
+            state.occupancy(colour) ^= pieceMask;
+            state.occupancy(Colour::Both) ^= pieceMask;
+            state.bitboards(Colour::Both, pieceType) ^= pieceMask;
             state.mailBox[boardIndex] = convertPieceToBinary(pieceType, isWhite);
-            state.pieceList.addPiece(boardIndex, isWhite ? White : Black);
+            state.pieceList.addPiece(boardIndex, isWhite ? Colour::White : Colour::Black);
 
         } else if (uCharacter == '/') {
             // Move position down a line and to the start (left) side

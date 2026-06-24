@@ -39,18 +39,18 @@ void visualiseGraphicBoard(BoardState state) {
 
             // At each location, check all possible piece and if present add to array
 
-            bool whitePawn = state.bitboards[White][Pawn] & (1ULL << pos),
-                 whiteBishop = state.bitboards[White][Bishop] & (1ULL << pos),
-                 whiteKnight = state.bitboards[White][Knight] & (1ULL << pos),
-                 whiteRook = state.bitboards[White][Rook] & (1ULL << pos),
-                 whiteKing = state.bitboards[White][King] & (1ULL << pos),
-                 whiteQueen = state.bitboards[White][Queen] & (1ULL << pos),
-                 blackPawn = state.bitboards[Black][Pawn] & (1ULL << pos),
-                 blackBishop = state.bitboards[Black][Bishop] & (1ULL << pos),
-                 blackKnight = state.bitboards[Black][Knight] & (1ULL << pos),
-                 blackRook = state.bitboards[Black][Rook] & (1ULL << pos),
-                 blackKing = state.bitboards[Black][King] & (1ULL << pos),
-                 blackQueen = state.bitboards[Black][Queen] & (1ULL << pos);
+            bool whitePawn = state.bitboards(Colour::White, Pawn) & (1ULL << pos),
+                 whiteBishop = state.bitboards(Colour::White, Bishop) & (1ULL << pos),
+                 whiteKnight = state.bitboards(Colour::White, Knight) & (1ULL << pos),
+                 whiteRook = state.bitboards(Colour::White, Rook) & (1ULL << pos),
+                 whiteKing = state.bitboards(Colour::White, King) & (1ULL << pos),
+                 whiteQueen = state.bitboards(Colour::White, Queen) & (1ULL << pos),
+                 blackPawn = state.bitboards(Colour::Black, Pawn) & (1ULL << pos),
+                 blackBishop = state.bitboards(Colour::Black, Bishop) & (1ULL << pos),
+                 blackKnight = state.bitboards(Colour::Black, Knight) & (1ULL << pos),
+                 blackRook = state.bitboards(Colour::Black, Rook) & (1ULL << pos),
+                 blackKing = state.bitboards(Colour::Black, King) & (1ULL << pos),
+                 blackQueen = state.bitboards(Colour::Black, Queen) & (1ULL << pos);
 
             if (whitePawn)
                 temp = 'P';

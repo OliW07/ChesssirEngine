@@ -1,12 +1,11 @@
-#ifndef BOARD_H
-#define BOARD_H
+#pragma once
 
-#include <vector>
+#include <cstdint>
 
+#include "Types.h"
 #include "attackHandler.h"
 #include "engine.h"
 #include "moveGenerator.h"
-#include "utils/Types.h"
 
 struct SavedData {
     int halfMoveClock;
@@ -26,14 +25,15 @@ class Board {
     int historyIndex = 0;
     int eval = 0;
 
-    bool isPieceWhite(int pos);
     bool isSquareEmpty(int pos);
-    bool isCheck(Colours kingColour);
+    bool isCheck(Colour kingColour);
     bool isCapture(Move& move);
+
+    Colour getColour(int pos);
 
     uint64_t getFriendlyPieces(int pos);
     uint64_t getEnemyPieces(int pos);
-    uint64_t getKingLocation(bool isWhite);
+    uint64_t getKingLocation(Colour colour);
     uint64_t* getBitBoardFromPiece(int pieceEnum, bool isWhite);
     uint64_t getRay(int pos1, int pos2);
 
@@ -74,5 +74,3 @@ class Game {
     bool isInsufficientMaterial();
     bool isFiftyMoveLimit();
 };
-
-#endif

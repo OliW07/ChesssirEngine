@@ -1,11 +1,8 @@
-#ifndef PRECOMPUTE_H
-#define PRECOMPUTE_H
+#pragma once
 
 #include <cstdint>
-#include <string>
 
-#include "evaluate.h"
-#include "utils/Types.h"
+#include "Types.h"
 
 namespace precomputedData {
 
@@ -93,5 +90,3 @@ inline int evaluatePieceSquare(int pieceType, int square, bool isWhite, bool isE
 
     return isWhite ? value : -value;
 }
-
-#endif

@@ -2,7 +2,6 @@
 
 #include <random>
 
-#include "Types.h"
 #include "board.h"
 
 ZobristKeys Zobrist;
@@ -12,8 +11,8 @@ void initZobristKeys() {
 
     for (int piece = 0; piece < 6; piece++) {
         for (int square = 0; square < 64; square++) {
-            Zobrist.pieceKeys[White][piece][square] = rng();
-            Zobrist.pieceKeys[Black][piece][square] = rng();
+            Zobrist.pieceKeys[(size_t)Colour::White][piece][square] = rng();
+            Zobrist.pieceKeys[(size_t)Colour::Black][piece][square] = rng();
         }
     }
 
@@ -31,12 +30,12 @@ void initZobristKeys() {
 uint64_t generateFullHash(Board& board) {
     uint64_t hash = 0ULL;
 
-    for (int Colour = Black; Colour <= White; Colour++) {
-        for (int i = 0; i < board.state.pieceList.pieceCount[Colour]; i++) {
-            int loc = board.state.pieceList.list[Colour][i];
+    for (int colour = 0; colour <= 1; ++colour) {
+        for (int i = 0; i < board.state.pieceList.pieceCount[colour]; i++) {
+            int loc = board.state.pieceList.list[colour][i];
             Pieces pieceType = (Pieces)(board.state.mailBox[loc] & ~8);
 
-            hash ^= Zobrist.pieceKeys[Colour][pieceType][loc];
+            hash ^= Zobrist.pieceKeys[colour][pieceType][loc];
         }
     }
 

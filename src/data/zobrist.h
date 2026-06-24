@@ -1,8 +1,8 @@
-#ifndef ZOBRIST_H
-#define ZOBRIST_H
+#pragma once
 
-#include "Types.h"
-#include "board.h"
+#include <cstdint>
+
+class Board;
 
 struct ZobristKeys {
     uint64_t pieceKeys[2][6][64] = {0ULL};
@@ -14,5 +14,3 @@ struct ZobristKeys {
 void initZobristKeys();
 
 uint64_t generateFullHash(Board& board);
-
-#endif

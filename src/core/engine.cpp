@@ -5,14 +5,10 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
+#include "Types.h"
 #include "board.h"
-#include "debug.h"
-#include "evaluate.h"
-#include "moveGenerator.h"
-#include "utils/Types.h"
-#include "utils/log.h"
+#include "log.h"
 
 Move Engine::search() {
     startTime = std::chrono::steady_clock::now();
@@ -72,7 +68,7 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply) {
     if (maxDepth == 0)
         return quiescence(alpha, beta, ply);
 
-    Colours activeColour = (Colours)game.board.state.whiteToMove;
+    Colour activeColour = (Colour)game.board.state.whiteToMove;
     int bestScore = -999999;
     int alphaOrig = alpha;
     Move bestMoveThisNode = {};
@@ -86,7 +82,8 @@ int Engine::negamax(int maxDepth, int alpha, int beta, int ply) {
     }
 
     if (moves.count == 0) {
-        bool inCheck = game.attackHandler.isSquareAttacked(game.board.getKingLocation(activeColour), !activeColour);
+        bool inCheck =
+            game.attackHandler.isSquareAttacked(game.board.getKingLocation(activeColour), invertColour(activeColour));
         return inCheck ? (-MATESCORE + ply) : 0;
     }
 
@@ -139,8 +136,9 @@ int Engine::quiescence(int alpha, int beta, int ply) {
     if ((nodesVisited & 2047) == 0 && abortSearch())
         return 0;
 
-    Colours activeColour = (Colours)game.board.state.whiteToMove;
-    bool inCheck = game.attackHandler.isSquareAttacked(game.board.getKingLocation(activeColour), !activeColour);
+    Colour activeColour = (Colour)game.board.state.whiteToMove;
+    bool inCheck =
+        game.attackHandler.isSquareAttacked(game.board.getKingLocation(activeColour), invertColour(activeColour));
 
     if (!inCheck) {
         int standPat = game.board.state.whiteToMove ? game.board.eval : -game.board.eval;

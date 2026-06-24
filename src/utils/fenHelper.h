@@ -1,11 +1,7 @@
-#ifndef FENHELPER_H
-#define FENHELPER_H
+#pragma once
 
 #include <string>
 
-#include "Types.h"
-#include "board.h"
+struct BoardState;
 
 void parseFenString(std::string fen, BoardState& state);
-
-#endif

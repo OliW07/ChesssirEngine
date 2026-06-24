@@ -1,9 +1,7 @@
 
 #include <cmath>
-#include <iostream>
 
 #include "precompute.h"
-#include "utils/Types.h"
 
 namespace precomputedData {
 

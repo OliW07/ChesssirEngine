@@ -1,11 +1,9 @@
-#ifndef TT_H
-#define TT_H
-
-#include <Types.h>
+#pragma once
 
 #include <memory>
 
-#include "utils/bitops.h"
+#include "Types.h"
+#include "bitops.h"
 
 using namespace ChessEngine::Utils;
 
@@ -13,10 +11,10 @@ enum class NodeType : uint8_t { Exact, Upperbound, Lowerbound };
 
 struct alignas(16) TTEntry {
     uint64_t zhash;
-    uint8_t depth;
-    uint8_t age;
     int16_t eval;
     uint16_t bestMove;
+    uint8_t depth;
+    uint8_t age;
     NodeType type;
 };
 
@@ -43,5 +41,3 @@ class TranspositionTable {
     void clear();
     bool probe(uint64_t zhash, TTEntry& out);
 };
-
-#endif

@@ -1,6 +1,6 @@
-#ifndef MOVEGEN_H
-#define MOVEGEN_H
+#pragma once
 
+#include "Types.h"
 #include "attackHandler.h"
 
 class Board;
@@ -60,4 +60,3 @@ class MoveGenerator {
 };
 
 void setCaptureScore(Move& move, Board& board);
-#endif

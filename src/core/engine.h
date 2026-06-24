@@ -1,12 +1,11 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#pragma once
 
 #include <atomic>
 #include <chrono>
 #include <mutex>
 
+#include "Types.h"
 #include "transpositionTable.h"
-#include "utils/Types.h"
 
 class Game;
 
@@ -32,4 +31,3 @@ class Engine {
     int negamax(int maxDepth, int alpha, int beta, int ply);
     int quiescence(int alpha, int beta, int ply);
 };
-#endif

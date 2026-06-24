@@ -1,8 +1,6 @@
-#ifndef EVALUATE_H
-#define EVALUATE_H
+#pragma once
 
 #include "board.h"
-#include "utils/Types.h"
 
 void setFullEval(Board& board);
 
@@ -21,5 +19,3 @@ inline constexpr std::array<int, 7> PieceValues = [] {
 
     return values;
 }();
-
-#endif

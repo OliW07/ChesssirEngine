@@ -1,7 +1,4 @@
-#include <cctype>
-#include <cmath>
 #include <cstdio>
-#include <iostream>
 
 #include "board.h"
 #include "uci.h"

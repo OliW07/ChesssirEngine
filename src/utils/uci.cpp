@@ -9,10 +9,9 @@
 
 #include "board.h"
 #include "engine.h"
+#include "log.h"
 #include "moveGenerator.h"
 #include "perft.h"
-#include "utils/Types.h"
-#include "utils/log.h"
 
 void readLoop(Game& game) {
     std::string line;

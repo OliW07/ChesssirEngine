@@ -1,5 +1,4 @@
-#ifndef TYPES
-#define TYPES
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -12,10 +11,12 @@
 
 enum Pieces { Bishop, Queen, Rook, King, Pawn, Knight, None };
 enum RaysDirection { North, South, East, West, NorthEast, SouthEast, NorthWest, SouthWest };
-enum Colours { Black, White, Both };
+enum class Colour : uint8_t { Black, White, Both };
 
-constexpr std::array<RaysDirection, 8> ALL_DIRECTIONS = {North,     East,      South,     West,
-                                                         NorthEast, SouthEast, NorthWest, SouthWest};
+constexpr size_t ColourCount = 3;
+constexpr size_t PieceCount = 6;
+
+constexpr std::array<RaysDirection, 8> ALL_DIRECTIONS = {North, East, South, West};
 constexpr std::array<RaysDirection, 4> ORTHOGONAL_DIRECTIONS = {North, East, South, West};
 constexpr std::array<RaysDirection, 4> DIAGONAL_DIRECTIONS = {NorthEast, SouthEast, NorthWest, SouthWest};
 
@@ -38,14 +39,32 @@ class PieceList {
         pieceCount[1] = 0;
     }
 
-    void addPiece(int pos, Colours colour);
-    void removePiece(int pos, Colours colour);
-    void movePiece(int to, int from, Colours colour);
+    void addPiece(int pos, Colour colour);
+    void removePiece(int pos, Colour colour);
+    void movePiece(int to, int from, Colour colour);
+};
+
+struct BitboardView {
+    uint64_t bitboards[ColourCount][PieceCount] = {0ULL};
+
+    uint64_t& operator()(Colour colour, Pieces piece) {
+        return bitboards[static_cast<size_t>(colour)][static_cast<size_t>(piece)];
+    }
+
+    const uint64_t& operator()(Colour colour, Pieces piece) const {
+        return bitboards[static_cast<size_t>(colour)][static_cast<size_t>(piece)];
+    }
+};
+
+struct Occupancy {
+    uint64_t bitboards[ColourCount];
+
+    uint64_t& operator()(Colour colour) { return bitboards[static_cast<size_t>(colour)]; }
 };
 
 struct BoardState {
-    uint64_t bitboards[3][6] = {0ULL};
-    uint64_t occupancy[3] = {0ULL};
+    BitboardView bitboards;
+    Occupancy occupancy;
 
     bool whiteToMove = 0;
     bool whiteStarts = 1;
@@ -123,11 +142,9 @@ constexpr std::span<const RaysDirection> SLIDING_DIRECTIONS(Pieces piece) {
     }
 }
 
-Colours getSquareColour(int pos);
-
+Colour getSquareColour(int pos);
+Colour invertColour(Colour colour);
 std::string convertMoveToAlgebraicNotation(Move move);
 
 Move convertAlgebraicNotationToMove(const std::string& notation);
 std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard);
-
-#endif
