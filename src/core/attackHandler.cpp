@@ -107,7 +107,7 @@ uint64_t AttackHandler::getAttackers(int pos, Colour attackingColour) {
     uint64_t attackers = 0ULL;
 
     attackers |= getPawnAttackers(pos, attackingColour);
-    attackers |= game.board.state.bitboards(attackingColour, Knight);
+    attackers |= knightMoves[pos] & game.board.state.bitboards(attackingColour, Knight);
 
     for (int i = 0; i < 8; ++i) {
         RaysDirection direction = static_cast<RaysDirection>(i);
