@@ -16,7 +16,8 @@ enum class Colour : uint8_t { Black, White, Both };
 constexpr size_t ColourCount = 3;
 constexpr size_t PieceCount = 6;
 
-constexpr std::array<RaysDirection, 8> ALL_DIRECTIONS = {North, East, South, West};
+constexpr std::array<RaysDirection, 8> ALL_DIRECTIONS = {North,     East,      South,     West,
+                                                         NorthEast, SouthEast, NorthWest, SouthWest};
 constexpr std::array<RaysDirection, 4> ORTHOGONAL_DIRECTIONS = {North, East, South, West};
 constexpr std::array<RaysDirection, 4> DIAGONAL_DIRECTIONS = {NorthEast, SouthEast, NorthWest, SouthWest};
 
@@ -57,7 +58,7 @@ struct BitboardView {
 };
 
 struct Occupancy {
-    uint64_t bitboards[ColourCount];
+    uint64_t bitboards[ColourCount] = {};
 
     uint64_t& operator()(Colour colour) { return bitboards[static_cast<size_t>(colour)]; }
 };
