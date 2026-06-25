@@ -122,7 +122,7 @@ void readLoop(Game& game) {
                 benchGame.setPosition(positions[i], {});
 
                 auto posStart = std::chrono::steady_clock::now();
-                uint64_t nodes = perftSearch(benchGame, depth);
+                uint64_t nodes = perftSearch(benchGame, depth, depth);
                 auto posEnd = std::chrono::steady_clock::now();
 
                 auto posMs = std::chrono::duration_cast<std::chrono::milliseconds>(posEnd - posStart).count();

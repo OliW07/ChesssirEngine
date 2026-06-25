@@ -23,7 +23,7 @@ TEST_P(PerftTestFixture, CheckNodeCount) {
     Game game;
     game.setPosition(testCase.fen, MoveList{});
 
-    uint64_t searchedNodes = perftSearch(game, testCase.depth);
+    uint64_t searchedNodes = perftSearch(game, testCase.depth, testCase.depth, {});
 
     EXPECT_EQ(searchedNodes, testCase.expectedNodes)
         << "Failed at fen: " << testCase.fen << " at depth " << testCase.depth;

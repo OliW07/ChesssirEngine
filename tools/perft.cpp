@@ -6,11 +6,7 @@
 #include "board.h"
 #include "moveGenerator.h"
 
-std::map<std::string, int> moveBreakDown = {};
-
-int maximum = 4;
-
-uint64_t perftSearch(Game& game, int maxDepth) {
+uint64_t perftSearch(Game& game, int maxDepth, int initialDepth, std::map<std::string, int>* outBreakdown) {
     if (maxDepth == 0)
         return 1ULL;
 
@@ -21,14 +17,14 @@ uint64_t perftSearch(Game& game, int maxDepth) {
     for (const auto& move : moves) {
         game.board.makeMove(move);
 
-        uint64_t nodes = perftSearch(game, maxDepth - 1);
+        uint64_t nodes = perftSearch(game, maxDepth - 1, initialDepth, outBreakdown);
         nodeCount += nodes;
 
         game.board.unmakeMove(move);
 
-        if (maxDepth == maximum) {
+        if (maxDepth == initialDepth && outBreakdown) {
             std::string algebraicNotation = convertMoveToAlgebraicNotation(move);
-            moveBreakDown[algebraicNotation] += nodes;
+            (*outBreakdown)[algebraicNotation] += nodes;
         }
     }
 
