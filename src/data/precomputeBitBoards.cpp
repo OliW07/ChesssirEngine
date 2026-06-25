@@ -21,13 +21,13 @@ uint64_t rankMasks[8] = {0x00000000000000FF, 0x000000000000FF00, 0x0000000000FF0
                          0x000000FF00000000, 0x0000FF0000000000, 0x00FF000000000000, 0xFF00000000000000};
 };  // namespace precomputedData
 
-void computeKnightMoves(const int pos);
-void computeKingMoves(const int pos);
-void computeQueenMoves(const int pos);
-void computeRookMoves(const int pos);
-void computeBishopMoves(const int pos);
-void computePawnMoves(const int pos, bool isWhite);
-void computeSlidingRays(const int pos);
+void computeKnightMoves(const Square square);
+void computeKingMoves(const Square square);
+void computeQueenMoves(const Square square);
+void computeRookMoves(const Square square);
+void computeBishopMoves(const Square square);
+void computePawnMoves(const Square square, bool isWhite);
+void computeSlidingRays(const Square square);
 
 void precomputeBitBoardMoves() {
     for (int i = 0; i < 64; i++) {
@@ -42,19 +42,19 @@ void precomputeBitBoardMoves() {
     }
 }
 
-void computeKnightMoves(const int pos) {
+void computeKnightMoves(const Square square) {
     const int offsets[8] = {6, 10, 15, 17, -6, -10, -15, -17};
 
     for (int move : offsets) {
-        int newLocation = pos + move;
+        int newLocation = square + move;
 
         // Check if the new location is on the board, before running helper functions
 
         if (newLocation < 0 || newLocation > 63)
             continue;
 
-        int columnDifference = abs(convertLocationToColumns(pos) - convertLocationToColumns(newLocation));
-        int rowDifference = abs(convertLocationToRows(pos) - convertLocationToRows(newLocation));
+        int columnDifference = abs(convertLocationToColumns(square) - convertLocationToColumns(newLocation));
+        int rowDifference = abs(convertLocationToRows(square) - convertLocationToRows(newLocation));
 
         // Check the knight moves in an L shape
 
@@ -62,51 +62,53 @@ void computeKnightMoves(const int pos) {
             continue;
         }
 
-        precomputedData::knightMoves[pos] |= (1ULL << newLocation);
+        precomputedData::knightMoves[square] |= (1ULL << newLocation);
     }
 }
 
-void computeKingMoves(const int pos) {
+void computeKingMoves(const Square square) {
     const int offsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
 
     for (int move : offsets) {
-        int newLocation = pos + move;
+        int newLocation = square + move;
 
         // Check if the new location is on the board, before running helper functions
 
         if (newLocation < 0 || newLocation > 63)
             continue;
 
-        int columnDifference = abs(convertLocationToColumns(pos) - convertLocationToColumns(newLocation));
-        int rowDifference = abs(convertLocationToRows(pos) - convertLocationToRows(newLocation));
+        int columnDifference = abs(convertLocationToColumns(square) - convertLocationToColumns(newLocation));
+        int rowDifference = abs(convertLocationToRows(square) - convertLocationToRows(newLocation));
 
         // Check the king does not wrap around the board
 
         if ((columnDifference > 1) || (rowDifference > 1))
             continue;
 
-        precomputedData::kingMoves[pos] |= (1ULL << newLocation);
+        precomputedData::kingMoves[square] |= (1ULL << newLocation);
     }
 }
 
-void computeQueenMoves(const int pos) {
-    precomputedData::queenMoves[pos] = (precomputedData::rays[North][pos] | precomputedData::rays[East][pos] |
-                                        precomputedData::rays[South][pos] | precomputedData::rays[West][pos] |
-                                        precomputedData::rays[NorthEast][pos] | precomputedData::rays[SouthEast][pos] |
-                                        precomputedData::rays[SouthWest][pos] | precomputedData::rays[NorthWest][pos]);
+void computeQueenMoves(const Square square) {
+    precomputedData::queenMoves[square] =
+        (precomputedData::rays[North][square] | precomputedData::rays[East][square] |
+         precomputedData::rays[South][square] | precomputedData::rays[West][square] |
+         precomputedData::rays[NorthEast][square] | precomputedData::rays[SouthEast][square] |
+         precomputedData::rays[SouthWest][square] | precomputedData::rays[NorthWest][square]);
 }
 
-void computeRookMoves(const int pos) {
-    precomputedData::rookMoves[pos] = (precomputedData::rays[North][pos] | precomputedData::rays[East][pos] |
-                                       precomputedData::rays[South][pos] | precomputedData::rays[West][pos]);
+void computeRookMoves(const Square square) {
+    precomputedData::rookMoves[square] = (precomputedData::rays[North][square] | precomputedData::rays[East][square] |
+                                          precomputedData::rays[South][square] | precomputedData::rays[West][square]);
 }
 
-void computeBishopMoves(const int pos) {
-    precomputedData::bishopMoves[pos] = (precomputedData::rays[NorthEast][pos] | precomputedData::rays[SouthEast][pos] |
-                                         precomputedData::rays[SouthWest][pos] | precomputedData::rays[NorthWest][pos]);
+void computeBishopMoves(const Square square) {
+    precomputedData::bishopMoves[square] =
+        (precomputedData::rays[NorthEast][square] | precomputedData::rays[SouthEast][square] |
+         precomputedData::rays[SouthWest][square] | precomputedData::rays[NorthWest][square]);
 }
 
-void computePawnMoves(const int pos, bool isWhite) {
+void computePawnMoves(const Square square, bool isWhite) {
     const int whiteOffsets[3] = {7, 8, 9};
     const int blackOffsets[3] = {-7, -8, -9};
 
@@ -114,15 +116,15 @@ void computePawnMoves(const int pos, bool isWhite) {
 
     for (int i = 0; i < 3; i++) {
         int move = offsets[i];
-        int newLocation = pos + move;
+        int newLocation = square + move;
 
         // Check if the new location is on the board, before running helper functions
 
         if (newLocation < 0 || newLocation > 63)
             continue;
 
-        int columnDifference = abs(convertLocationToColumns(pos) - convertLocationToColumns(newLocation));
-        int rowDifference = abs(convertLocationToRows(pos) - convertLocationToRows(newLocation));
+        int columnDifference = abs(convertLocationToColumns(square) - convertLocationToColumns(newLocation));
+        int rowDifference = abs(convertLocationToRows(square) - convertLocationToRows(newLocation));
 
         // Check the pawn does not wrap around the board
 
@@ -132,43 +134,43 @@ void computePawnMoves(const int pos, bool isWhite) {
         if (i == 1) {
             // Straight movement, pawn move
             if (isWhite)
-                precomputedData::whitePawnMoves[pos] |= (1ULL << newLocation);
+                precomputedData::whitePawnMoves[square] |= (1ULL << newLocation);
             else
-                precomputedData::blackPawnMoves[pos] |= (1ULL << newLocation);
+                precomputedData::blackPawnMoves[square] |= (1ULL << newLocation);
         } else {
             // Diagonal movement, pawn attack
             if (isWhite)
-                precomputedData::whitePawnAttacks[pos] |= (1ULL << newLocation);
+                precomputedData::whitePawnAttacks[square] |= (1ULL << newLocation);
             else
-                precomputedData::blackPawnAttacks[pos] |= (1ULL << newLocation);
+                precomputedData::blackPawnAttacks[square] |= (1ULL << newLocation);
         }
     }
 
     // If a pawn is on the starting rank they can move forwards 2 spaces, adding the extra space
 
-    if (isWhite && convertLocationToRows(pos) == 1)
-        precomputedData::whitePawnMoves[pos] |= (1ULL << (pos + 16));
-    else if (!isWhite && convertLocationToRows(pos) == 6)
-        precomputedData::blackPawnMoves[pos] |= (1ULL << (pos - 16));
+    if (isWhite && convertLocationToRows(square) == 1)
+        precomputedData::whitePawnMoves[square] |= (1ULL << (square + 16));
+    else if (!isWhite && convertLocationToRows(square) == 6)
+        precomputedData::blackPawnMoves[square] |= (1ULL << (square - 16));
 }
 
-void computeSlidingRays(const int pos) {
+void computeSlidingRays(const Square square) {
     for (RaysDirection direction : ALL_DIRECTIONS) {
         int offset = DIRECTION_OFFSETS[direction];
 
-        int newLocation = pos + offset;
+        int newLocation = square + offset;
 
         bool diagonalSliding =
             (direction == NorthEast || direction == SouthEast || direction == SouthWest || direction == NorthWest);
 
-        uint64_t* RayBitBoard_p = &precomputedData::rays[direction][pos];
+        uint64_t* RayBitBoard_p = &precomputedData::rays[direction][square];
 
         // Check if the new location is on the board, before running helper functions
 
         if (newLocation < 0 || newLocation > 63)
             continue;
 
-        int column = convertLocationToColumns(pos), row = convertLocationToRows(pos),
+        int column = convertLocationToColumns(square), row = convertLocationToRows(square),
             newColumn = convertLocationToColumns(newLocation), newRow = convertLocationToRows(newLocation);
 
         // Inital check to ensure we don't instantly wrap around the board

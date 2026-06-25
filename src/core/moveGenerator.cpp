@@ -11,28 +11,28 @@
 using namespace precomputedData;
 using namespace ChessEngine::Utils;
 
-uint64_t MoveGenerator::getPseudoLegalMoves(const int pos) {
-    if (game.board.isSquareEmpty(pos))
+uint64_t MoveGenerator::getPseudoLegalMoves(const Square square) {
+    if (game.board.isSquareEmpty(square))
         return 0ULL;
 
-    uint64_t pseudoLegalMoves = game.attackHandler.getAttacks(pos);
-    bool isWhite = game.board.getColour(pos) == Colour::White;
+    uint64_t pseudoLegalMoves = game.attackHandler.getAttacks(square);
+    bool isWhite = game.board.getColour(square) == Colour::White;
 
-    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
+    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(square);
 
     // Add (non attack) pawn moves
     if (pieceType == Pawn) {
-        uint64_t* pawnMoves = isWhite ? &whitePawnMoves[pos] : &blackPawnMoves[pos];
+        uint64_t* pawnMoves = isWhite ? &whitePawnMoves[square] : &blackPawnMoves[square];
 
         // Pawns can't move onto their own pieces or friendly pieces
         pseudoLegalMoves |= (*pawnMoves & ~game.board.state.occupancy(Colour::Both));
 
-        int oneStepIndex = isWhite ? pos + 8 : pos - 8;
+        int oneStepIndex = isWhite ? square + 8 : square - 8;
 
         // Check if the single push is blocked, if so, the double push is also blocked
         if (oneStepIndex >= 0 && oneStepIndex < 64) {
             if ((1ULL << oneStepIndex) & game.board.state.occupancy(Colour::Both)) {
-                int twoStepIndex = isWhite ? pos + 16 : pos - 16;
+                int twoStepIndex = isWhite ? square + 16 : square - 16;
                 if (twoStepIndex >= 0 && twoStepIndex < 64) {
                     pseudoLegalMoves &= ~(1ULL << twoStepIndex);
                 }
@@ -76,12 +76,12 @@ uint64_t MoveGenerator::getPseudoLegalMoves(const int pos) {
     return pseudoLegalMoves;
 }
 
-uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) {
+uint64_t MoveGenerator::applyLegalMoveValidation(const Square square, uint64_t moves) {
     uint64_t legalMoves = moves;
 
-    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
+    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(square);
 
-    bool isWhite = game.board.getColour(pos) == Colour::White;
+    bool isWhite = game.board.getColour(square) == Colour::White;
     Colour colour = isWhite ? Colour::White : Colour::Black;
     Colour enemyColour = invertColour(colour);
 
@@ -99,8 +99,8 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
             if (game.attackHandler.isSquareAttacked(move, enemyColour))
                 legalMoves ^= (1ULL << move);
 
-            if (abs(convertLocationToColumns(move) - convertLocationToColumns(pos)) > 1 &&
-                (game.attackHandler.isSquareAttacked(pos, enemyColour)))
+            if (abs(convertLocationToColumns(move) - convertLocationToColumns(square)) > 1 &&
+                (game.attackHandler.isSquareAttacked(square, enemyColour)))
                 legalMoves ^= (1ULL << move);
         }
 
@@ -117,7 +117,7 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
             if (attackerType == Knight || attackerType == King || attackerType == Pawn)
                 continue;
 
-            RaysDirection direction = convertPositionsToDirections(attackerLoc, pos);
+            RaysDirection direction = squaresToDirection(attackerLoc, square);
             legalMoves &= ~rays[direction][attackerLoc];
         }
 
@@ -151,10 +151,10 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
         }
     }
     // If the piece is pinned, limit its movement to the ray between itself and the king
-    if (game.attackHandler.getPinnedPieces(colour) & (1ULL << pos)) {
+    if (game.attackHandler.getPinnedPieces(colour) & (1ULL << square)) {
         int kingLocation = game.board.getKingLocation(colour);
 
-        RaysDirection direction = convertPositionsToDirections(kingLocation, pos);
+        RaysDirection direction = squaresToDirection(kingLocation, square);
 
         legalMoves &= rays[direction][kingLocation];
     }
@@ -170,21 +170,21 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
             int enpassantVictimLoc = isWhite ? move - 8 : move + 8;
 
             // If the move is diagonal and to an empty square it is enpassantenpassantVictimLoc
-            if ((convertLocationToColumns(pos) - convertLocationToColumns(move) != 0) &&
-                (convertLocationToRows(pos) - convertLocationToRows(move) != 0) &&
+            if ((convertLocationToColumns(square) - convertLocationToColumns(move) != 0) &&
+                (convertLocationToRows(square) - convertLocationToRows(move) != 0) &&
                 !((1ULL << move) & game.board.state.occupancy(Colour::Both))) {
                 // Temporarily remove the pawn, to check if the enpassant victim is pinned
                 uint64_t* pawnBitBoard = isWhite ? &game.board.state.bitboards(Colour::White, Pawn)
                                                  : &game.board.state.bitboards(Colour::Black, Pawn);
 
-                uint64_t pawnMask = (1ULL << pos);
+                uint64_t pawnMask = (1ULL << square);
 
                 *pawnBitBoard ^= pawnMask;
                 game.board.state.occupancy(Colour::Both) ^= pawnMask;
                 game.board.state.occupancy(colour) ^= pawnMask;
 
                 if ((game.attackHandler.getPinnedPieces(colour, true) & (1ULL << enpassantVictimLoc)) &&
-                    (convertLocationToRows(pos) == convertLocationToRows(kingLocation))) {
+                    (convertLocationToRows(square) == convertLocationToRows(kingLocation))) {
                     legalMoves ^= (1ULL << move);
                 }
 
@@ -200,36 +200,36 @@ uint64_t MoveGenerator::applyLegalMoveValidation(const int pos, uint64_t moves) 
     return legalMoves;
 }
 
-uint64_t MoveGenerator::getLegalMoves(const int pos) {
+uint64_t MoveGenerator::getLegalMoves(const Square square) {
     // Legal moves, except for pawn moves to promotion squares, handled seperately
 
-    if (pos < 0 || pos > 63)
+    if (square < 0 || square > 63)
         throw std::runtime_error("The position provided, is not in range 0-63");
 
-    uint64_t legalMoves = applyLegalMoveValidation(pos, getPseudoLegalMoves(pos));
+    uint64_t legalMoves = applyLegalMoveValidation(square, getPseudoLegalMoves(square));
 
-    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
+    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(square);
 
     // Remove pawns promting, handling seperately with multiple outcomes
 
     if (pieceType == Pawn) {
-        int promotionRank = game.board.getColour(pos) == Colour::White ? 7 : 0;
+        int promotionRank = game.board.getColour(square) == Colour::White ? 7 : 0;
         legalMoves &= ~(rankMasks[promotionRank]);
     }
 
     return legalMoves;
 }
 
-uint64_t MoveGenerator::getPromotionMoves(const int pos) {
-    Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
+uint64_t MoveGenerator::getPromotionMoves(const Square square) {
+    Pieces pieceType = (Pieces)game.board.getPieceEnum(square);
     if (pieceType != Pawn)
         return 0ULL;
 
-    int promotionRank = game.board.getColour(pos) == Colour::White ? 7 : 0;
+    int promotionRank = game.board.getColour(square) == Colour::White ? 7 : 0;
 
-    uint64_t promotionMoves = getPseudoLegalMoves(pos) & rankMasks[promotionRank];
+    uint64_t promotionMoves = getPseudoLegalMoves(square) & rankMasks[promotionRank];
 
-    return applyLegalMoveValidation(pos, promotionMoves);
+    return applyLegalMoveValidation(square, promotionMoves);
 }
 
 MoveList MoveGenerator::getAllMoves() {

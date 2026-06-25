@@ -57,9 +57,9 @@ Move convertAlgebraicNotationToMove(const std::string& notation) {
     }
 }
 
-Colour getSquareColour(int pos) {
-    int rows = convertLocationToRows(pos);
-    int columns = convertLocationToColumns(pos);
+Colour getSquareColour(Square square) {
+    int rows = convertLocationToRows(square);
+    int columns = convertLocationToColumns(square);
 
     if (rows % 2 == 0) {
         if (columns % 2 == 0)
@@ -82,18 +82,18 @@ Colour invertColour(Colour colour) {
     throw std::runtime_error("Can only invert White / Black colour");
 }
 
-void PieceList::addPiece(int pos, Colour colour) {
+void PieceList::addPiece(Square square, Colour colour) {
     if (pieceCount[(size_t)colour] >= 16) {
         std::cout << "DEBUG: Piece list overflow attempt" << std::endl;
         return;
     }
-    list[(size_t)colour][pieceCount[(size_t)colour]] = pos;
-    mapBoardLocToList[pos] = pieceCount[(size_t)colour];
+    list[(size_t)colour][pieceCount[(size_t)colour]] = square;
+    mapBoardLocToList[square] = pieceCount[(size_t)colour];
     pieceCount[(size_t)colour]++;
 }
 
-void PieceList::removePiece(int pos, Colour colour) {
-    int listIndex = mapBoardLocToList[pos];
+void PieceList::removePiece(Square square, Colour colour) {
+    int listIndex = mapBoardLocToList[square];
 
     // Swap current index with last index, to keep O(1)
     list[(size_t)colour][listIndex] = list[(size_t)colour][pieceCount[(size_t)colour] - 1];
@@ -102,7 +102,7 @@ void PieceList::removePiece(int pos, Colour colour) {
 
     pieceCount[(size_t)colour]--;
 
-    mapBoardLocToList[pos] = -1;
+    mapBoardLocToList[square] = -1;
 }
 
 void PieceList::movePiece(int to, int from, Colour colour) {
@@ -125,11 +125,11 @@ std::vector<int> getLocationsFromBitBoard(uint64_t bitBoard) {
     return locations;
 }
 
-RaysDirection convertPositionsToDirections(int pos1, int pos2) {
-    int pos1Rows = convertLocationToRows(pos1), pos2Rows = convertLocationToRows(pos2),
-        pos1Columns = convertLocationToColumns(pos1), pos2Columns = convertLocationToColumns(pos2),
+RaysDirection squaresToDirection(Square square1, Square square2) {
+    int square1Rows = convertLocationToRows(square1), square2Rows = convertLocationToRows(square2),
+        square1Columns = convertLocationToColumns(square1), square2Columns = convertLocationToColumns(square2),
 
-        rowsDifference = pos1Rows - pos2Rows, columnsDifference = pos1Columns - pos2Columns;
+        rowsDifference = square1Rows - square2Rows, columnsDifference = square1Columns - square2Columns;
 
     bool isDiagonal = abs(rowsDifference) == abs(columnsDifference);
 
@@ -190,13 +190,13 @@ bool onlyOnePiece(uint64_t state) {
     return (ctz64(state) + clz64(state) == 63);
 }
 
-bool posInBounds(int pos) {
-    return (pos >= 0 && pos <= 63);
+bool squareInBounds(Square square) {
+    return (square >= 0 && square <= 63);
 }
 
-bool pieceWrapsTheBoard(int pos1, int pos2) {
-    int columnsDifference = abs(convertLocationToColumns(pos1) - convertLocationToColumns(pos2));
-    int rowsDifference = abs(convertLocationToRows(pos1) - convertLocationToRows(pos2));
+bool pieceWrapsTheBoard(Square square1, Square square2) {
+    int columnsDifference = abs(convertLocationToColumns(square1) - convertLocationToColumns(square2));
+    int rowsDifference = abs(convertLocationToRows(square1) - convertLocationToRows(square2));
 
     return !((columnsDifference < 2) && (rowsDifference < 2));
 }

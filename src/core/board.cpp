@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "Types.h"
 #include "bitops.h"
 #include "evaluate.h"
 #include "fenHelper.h"
@@ -19,24 +20,24 @@ void Board::init() {
     precomputeBitBoardMoves();
 }
 
-uint64_t Board::getFriendlyPieces(int pos) {
-    return state.occupancy(getColour(pos));
+uint64_t Board::getFriendlyPieces(Square square) {
+    return state.occupancy(getColour(square));
 }
 
 uint64_t Board::getKingLocation(Colour colour) {
     return ctz64(state.bitboards(colour, King));
 }
 
-uint64_t Board::getEnemyPieces(int pos) {
-    return state.occupancy(invertColour(getColour(pos)));
+uint64_t Board::getEnemyPieces(Square square) {
+    return state.occupancy(invertColour(getColour(square)));
 }
 
-uint64_t Board::getRay(int pos1, int pos2) {
-    RaysDirection direction = convertPositionsToDirections(pos1, pos2);
+uint64_t Board::getRay(Square square1, Square square2) {
+    RaysDirection direction = squaresToDirection(square1, square2);
 
-    uint64_t ray = rays[direction][pos1];
+    uint64_t ray = rays[direction][square1];
 
-    ray &= ~rays[direction][pos2];
+    ray &= ~rays[direction][square2];
 
     return ray;
 }
@@ -81,13 +82,13 @@ void Board::resetPosition() {
     }
 }
 
-int Board::getPieceEnum(int pos) {
+int Board::getPieceEnum(Square square) {
     // Toggle off the colour of piece, to get left with the enum
-    return state.mailBox[pos] & ~8;
+    return state.mailBox[square] & ~8;
 }
 
-int Board::getFirstBlocker(int pos, RaysDirection direction) {
-    uint64_t blockers = rays[direction][pos] & (state.occupancy(Colour::White) | state.occupancy(Colour::Black));
+int Board::getFirstBlocker(Square square, RaysDirection direction) {
+    uint64_t blockers = rays[direction][square] & (state.occupancy(Colour::White) | state.occupancy(Colour::Black));
 
     if (!blockers)
         return -1;
@@ -112,15 +113,15 @@ void Game::setPosition(std::string fen, MoveList moves) {
     setFullEval(board);
 }
 
-Colour Board::getColour(int pos) {
-    if ((1ULL << pos) & state.occupancy(Colour::White)) {
+Colour Board::getColour(Square square) {
+    if ((1ULL << square) & state.occupancy(Colour::White)) {
         return Colour::White;
     }
     return Colour::Black;
 }
 
-bool Board::isSquareEmpty(int pos) {
-    uint64_t target = 1ULL << pos;
+bool Board::isSquareEmpty(Square square) {
+    uint64_t target = 1ULL << square;
 
     uint64_t allPieces = state.occupancy(Colour::White) | state.occupancy(Colour::Black);
 

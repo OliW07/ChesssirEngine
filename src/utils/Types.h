@@ -13,6 +13,8 @@ enum Pieces { Bishop, Queen, Rook, King, Pawn, Knight, None };
 enum RaysDirection { North, South, East, West, NorthEast, SouthEast, NorthWest, SouthWest };
 enum class Colour : uint8_t { Black, White, Both };
 
+using Square = uint8_t;
+
 constexpr size_t ColourCount = 3;
 constexpr size_t PieceCount = 6;
 
@@ -40,8 +42,8 @@ class PieceList {
         pieceCount[1] = 0;
     }
 
-    void addPiece(int pos, Colour colour);
-    void removePiece(int pos, Colour colour);
+    void addPiece(Square square, Colour colour);
+    void removePiece(Square square, Colour colour);
     void movePiece(int to, int from, Colour colour);
 };
 
@@ -123,12 +125,12 @@ int convertLocationToColumns(const int location);
 int countOnes(uint64_t state);
 
 bool onlyOnePiece(uint64_t state);
-bool posInBounds(int pos);
-bool pieceWrapsTheBoard(int pos1, int pos2);
+bool squareInBounds(Square square);
+bool pieceWrapsTheBoard(Square square1, Square square2);
 
 uint8_t convertPieceToBinary(Pieces pieceEnum, bool isWhite);
 
-RaysDirection convertPositionsToDirections(int pos1, int pos2);
+RaysDirection squaresToDirection(Square square1, Square square2);
 
 constexpr std::span<const RaysDirection> SLIDING_DIRECTIONS(Pieces piece) {
     switch (piece) {
@@ -143,7 +145,7 @@ constexpr std::span<const RaysDirection> SLIDING_DIRECTIONS(Pieces piece) {
     }
 }
 
-Colour getSquareColour(int pos);
+Colour getSquareColour(Square square);
 Colour invertColour(Colour colour);
 std::string convertMoveToAlgebraicNotation(Move move);
 

@@ -50,10 +50,10 @@ class MoveGenerator {
     public:
     MoveGenerator(Game& gameParam) : game(gameParam) {}
 
-    uint64_t getPseudoLegalMoves(int pos);
-    uint64_t applyLegalMoveValidation(const int pos, uint64_t moves);
-    uint64_t getLegalMoves(const int pos);
-    uint64_t getPromotionMoves(const int pos);
+    uint64_t getPseudoLegalMoves(Square square);
+    uint64_t applyLegalMoveValidation(const Square square, uint64_t moves);
+    uint64_t getLegalMoves(const Square square);
+    uint64_t getPromotionMoves(const Square square);
 
     MoveList getAllMoves();
     MoveList getAllCaptures();

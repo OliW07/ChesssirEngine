@@ -35,22 +35,22 @@ void visualiseGraphicBoard(BoardState state) {
 
     for (int rows = 7; rows >= 0; rows--) {
         for (int columns = 0; columns < 8; columns++) {
-            int pos = 8 * rows + columns;
+            Square square = 8 * rows + columns;
 
             // At each location, check all possible piece and if present add to array
 
-            bool whitePawn = state.bitboards(Colour::White, Pawn) & (1ULL << pos),
-                 whiteBishop = state.bitboards(Colour::White, Bishop) & (1ULL << pos),
-                 whiteKnight = state.bitboards(Colour::White, Knight) & (1ULL << pos),
-                 whiteRook = state.bitboards(Colour::White, Rook) & (1ULL << pos),
-                 whiteKing = state.bitboards(Colour::White, King) & (1ULL << pos),
-                 whiteQueen = state.bitboards(Colour::White, Queen) & (1ULL << pos),
-                 blackPawn = state.bitboards(Colour::Black, Pawn) & (1ULL << pos),
-                 blackBishop = state.bitboards(Colour::Black, Bishop) & (1ULL << pos),
-                 blackKnight = state.bitboards(Colour::Black, Knight) & (1ULL << pos),
-                 blackRook = state.bitboards(Colour::Black, Rook) & (1ULL << pos),
-                 blackKing = state.bitboards(Colour::Black, King) & (1ULL << pos),
-                 blackQueen = state.bitboards(Colour::Black, Queen) & (1ULL << pos);
+            bool whitePawn = state.bitboards(Colour::White, Pawn) & (1ULL << square),
+                 whiteBishop = state.bitboards(Colour::White, Bishop) & (1ULL << square),
+                 whiteKnight = state.bitboards(Colour::White, Knight) & (1ULL << square),
+                 whiteRook = state.bitboards(Colour::White, Rook) & (1ULL << square),
+                 whiteKing = state.bitboards(Colour::White, King) & (1ULL << square),
+                 whiteQueen = state.bitboards(Colour::White, Queen) & (1ULL << square),
+                 blackPawn = state.bitboards(Colour::Black, Pawn) & (1ULL << square),
+                 blackBishop = state.bitboards(Colour::Black, Bishop) & (1ULL << square),
+                 blackKnight = state.bitboards(Colour::Black, Knight) & (1ULL << square),
+                 blackRook = state.bitboards(Colour::Black, Rook) & (1ULL << square),
+                 blackKing = state.bitboards(Colour::Black, King) & (1ULL << square),
+                 blackQueen = state.bitboards(Colour::Black, Queen) & (1ULL << square);
 
             if (whitePawn)
                 temp = 'P';

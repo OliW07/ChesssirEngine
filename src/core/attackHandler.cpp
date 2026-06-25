@@ -11,36 +11,37 @@
 using namespace precomputedData;
 using namespace ChessEngine::Utils;
 
-uint64_t AttackHandler::getAttacks(const int pos) {
+uint64_t AttackHandler::getAttacks(const Square square) {
     uint64_t PieceAttacks = 0ULL;
-    uint64_t target = 1ULL << pos;
+    uint64_t target = 1ULL << square;
 
-    if (game.board.isSquareEmpty(pos))
+    if (game.board.isSquareEmpty(square))
         return 0ULL;
 
-    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(pos);
-    Colour colour = game.board.getColour(pos);
+    enum Pieces pieceType = (Pieces)game.board.getPieceEnum(square);
+    Colour colour = game.board.getColour(square);
 
     switch (pieceType) {
         case Pawn:
-            PieceAttacks = game.board.getColour(pos) == Colour::White ? whitePawnAttacks[pos] : blackPawnAttacks[pos];
+            PieceAttacks =
+                game.board.getColour(square) == Colour::White ? whitePawnAttacks[square] : blackPawnAttacks[square];
             // The pawn can only attack (diagonally) is there is an enemy piece there
             PieceAttacks &= game.board.state.occupancy(invertColour(colour));
             break;
         case Knight:
-            PieceAttacks = knightMoves[pos];
+            PieceAttacks = knightMoves[square];
             break;
         case Bishop:
-            PieceAttacks = bishopMoves[pos];
+            PieceAttacks = bishopMoves[square];
             break;
         case Rook:
-            PieceAttacks = rookMoves[pos];
+            PieceAttacks = rookMoves[square];
             break;
         case King:
-            PieceAttacks = kingMoves[pos];
+            PieceAttacks = kingMoves[square];
             break;
         case Queen:
-            PieceAttacks = queenMoves[pos];
+            PieceAttacks = queenMoves[square];
             break;
         default:
             throw std::runtime_error("Invalid piecetype: ");
@@ -56,31 +57,32 @@ uint64_t AttackHandler::getAttacks(const int pos) {
         if (!blockers)
             break;
 
-        uint64_t blockers1Direction = blockers & rays[direction][pos];
+        uint64_t blockers1Direction = blockers & rays[direction][square];
 
         if (!blockers1Direction)
             continue;
 
-        int firstBlockerPos = game.board.getFirstBlocker(pos, direction);
+        int firstBlockerSquare = game.board.getFirstBlocker(square, direction);
 
-        if (firstBlockerPos == -1)
+        if (firstBlockerSquare == -1)
             continue;
 
-        blockingRays |= rays[direction][firstBlockerPos];
+        blockingRays |= rays[direction][firstBlockerSquare];
     }
 
-    uint64_t attacks = (PieceAttacks) & (~game.board.getFriendlyPieces(pos)) & (~blockingRays);
+    uint64_t attacks = (PieceAttacks) & (~game.board.getFriendlyPieces(square)) & (~blockingRays);
 
     if (pieceType == Pawn && game.board.state.enPassantSquare != -1) {
-        bool pieceWraps = pieceWrapsTheBoard(game.board.state.enPassantSquare, pos);
+        bool pieceWraps = pieceWrapsTheBoard(game.board.state.enPassantSquare, square);
 
         // The pawn must be diagonally next to the enpassant square to move there
-        if ((game.board.getColour(pos) == Colour::White &&
-             ((game.board.state.enPassantSquare - 9 == pos) || (game.board.state.enPassantSquare - 7 == pos))) &&
+        if ((game.board.getColour(square) == Colour::White &&
+             ((game.board.state.enPassantSquare - 9 == square) || (game.board.state.enPassantSquare - 7 == square))) &&
             !pieceWraps) {
             attacks |= (1ULL << game.board.state.enPassantSquare);
-        } else if (game.board.getColour(pos) == Colour::Black &&
-                   ((game.board.state.enPassantSquare + 9 == pos) || (game.board.state.enPassantSquare + 7 == pos)) &&
+        } else if (game.board.getColour(square) == Colour::Black &&
+                   ((game.board.state.enPassantSquare + 9 == square) ||
+                    (game.board.state.enPassantSquare + 7 == square)) &&
                    !pieceWraps) {
             attacks |= (1ULL << game.board.state.enPassantSquare);
         }
@@ -103,38 +105,38 @@ uint64_t AttackHandler::getAllAttacks(Colour colour) {
     return attacks;
 }
 
-uint64_t AttackHandler::getAttackers(int pos, Colour attackingColour) {
+uint64_t AttackHandler::getAttackers(Square square, Colour attackingColour) {
     uint64_t attackers = 0ULL;
 
-    attackers |= getPawnAttackers(pos, attackingColour);
-    attackers |= knightMoves[pos] & game.board.state.bitboards(attackingColour, Knight);
+    attackers |= getPawnAttackers(square, attackingColour);
+    attackers |= knightMoves[square] & game.board.state.bitboards(attackingColour, Knight);
 
     for (int i = 0; i < 8; ++i) {
         RaysDirection direction = static_cast<RaysDirection>(i);
 
-        int attackingPiecePos = game.board.getFirstBlocker(pos, direction);
+        int attackingPieceSquare = game.board.getFirstBlocker(square, direction);
 
-        if (attackingPiecePos == -1)
+        if (attackingPieceSquare == -1)
             continue;
 
-        Pieces pieceType = (Pieces)game.board.getPieceEnum(attackingPiecePos);
+        Pieces pieceType = (Pieces)game.board.getPieceEnum(attackingPieceSquare);
 
-        if (game.board.getColour(attackingPiecePos) != attackingColour)
+        if (game.board.getColour(attackingPieceSquare) != attackingColour)
             continue;
 
         bool straightSliding = (direction == North || direction == East || direction == West || direction == South);
 
         if ((straightSliding && ((pieceType == Rook) || pieceType == Queen)) ||
             (!straightSliding && ((pieceType == Bishop || pieceType == Queen)))) {
-            attackers |= (1ULL << attackingPiecePos);
+            attackers |= (1ULL << attackingPieceSquare);
         }
     }
 
     return attackers;
 }
 
-uint64_t AttackHandler::getPawnAttackers(int pos, Colour attackingColour) {
-    if (!posInBounds(pos))
+uint64_t AttackHandler::getPawnAttackers(Square square, Colour attackingColour) {
+    if (!squareInBounds(square))
         return 0ULL;
 
     uint64_t attackers = 0ULL;
@@ -143,15 +145,15 @@ uint64_t AttackHandler::getPawnAttackers(int pos, Colour attackingColour) {
     int offsets[2] = {7, 9};
 
     for (int direction : offsets) {
-        int pawnPos = attackingColour == Colour::White ? pos - direction : pos + direction;
+        int pawnSquare = attackingColour == Colour::White ? square - direction : square + direction;
 
-        if (!posInBounds(pawnPos))
+        if (!squareInBounds(pawnSquare))
             continue;
 
-        bool pieceWraps = pieceWrapsTheBoard(pos, pawnPos);
+        bool pieceWraps = pieceWrapsTheBoard(square, pawnSquare);
 
-        if ((*pieceBitBoard & (1ULL << pawnPos)) && !pieceWraps) {
-            attackers |= (1ULL << pawnPos);
+        if ((*pieceBitBoard & (1ULL << pawnSquare)) && !pieceWraps) {
+            attackers |= (1ULL << pawnSquare);
         }
     }
 
@@ -210,8 +212,8 @@ uint64_t AttackHandler::getPinnedPieces(Colour colour, bool includeEnemies) {
     return pinnedPieces;
 }
 
-bool AttackHandler::isSquareAttacked(int pos, Colour attackingColour) {
-    if (getPawnAttackers(pos, attackingColour))
+bool AttackHandler::isSquareAttacked(Square square, Colour attackingColour) {
+    if (getPawnAttackers(square, attackingColour))
         return true;
     uint64_t enemyKnights = game.board.state.bitboards(attackingColour, Knight);
     uint64_t enemyKing = game.board.state.bitboards(attackingColour, King);
@@ -219,26 +221,26 @@ bool AttackHandler::isSquareAttacked(int pos, Colour attackingColour) {
     uint64_t enemyBishops = game.board.state.bitboards(attackingColour, Bishop);
     uint64_t enemyQueens = game.board.state.bitboards(attackingColour, Queen);
 
-    if (knightMoves[pos] & enemyKnights)
+    if (knightMoves[square] & enemyKnights)
         return true;
-    if (kingMoves[pos] & enemyKing)
+    if (kingMoves[square] & enemyKing)
         return true;
 
     for (RaysDirection direction : DIAGONAL_DIRECTIONS) {
-        int attackerPos = game.board.getFirstBlocker(pos, direction);
-        if (attackerPos == -1)
+        int attackerSquare = game.board.getFirstBlocker(square, direction);
+        if (attackerSquare == -1)
             continue;
 
-        if ((1ULL << attackerPos) & (enemyBishops | enemyQueens))
+        if ((1ULL << attackerSquare) & (enemyBishops | enemyQueens))
             return true;
     }
 
     for (RaysDirection direction : ORTHOGONAL_DIRECTIONS) {
-        int attackerPos = game.board.getFirstBlocker(pos, direction);
-        if (attackerPos == -1)
+        int attackerSquare = game.board.getFirstBlocker(square, direction);
+        if (attackerSquare == -1)
             continue;
 
-        if ((1ULL << attackerPos) & (enemyRooks | enemyQueens))
+        if ((1ULL << attackerSquare) & (enemyRooks | enemyQueens))
             return true;
     }
 

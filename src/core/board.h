@@ -25,17 +25,17 @@ class Board {
     int historyIndex = 0;
     int eval = 0;
 
-    bool isSquareEmpty(int pos);
+    bool isSquareEmpty(Square square);
     bool isCheck(Colour kingColour);
     bool isCapture(Move& move);
 
-    Colour getColour(int pos);
+    Colour getColour(Square square);
 
-    uint64_t getFriendlyPieces(int pos);
-    uint64_t getEnemyPieces(int pos);
+    uint64_t getFriendlyPieces(Square square);
+    uint64_t getEnemyPieces(Square square);
     uint64_t getKingLocation(Colour colour);
     uint64_t* getBitBoardFromPiece(int pieceEnum, bool isWhite);
-    uint64_t getRay(int pos1, int pos2);
+    uint64_t getRay(Square square1, Square square2);
 
     void init();
     void resetPosition();
@@ -50,8 +50,8 @@ class Board {
     void saveHistory();
 
     int scoreMove(Move& move);
-    int getPieceEnum(int pos);
-    int getFirstBlocker(int pos, RaysDirection direction);
+    int getPieceEnum(Square square);
+    int getFirstBlocker(Square square, RaysDirection direction);
 
     SavedData history[2048] = {};
 };
