@@ -5,8 +5,6 @@
 #include "Types.h"
 #include "bitops.h"
 
-using namespace ChessEngine::Utils;
-
 enum class NodeType : uint8_t { Exact, Upperbound, Lowerbound };
 
 struct alignas(16) TTEntry {
@@ -32,7 +30,7 @@ class TranspositionTable {
         int maxEntries = SIZE_MB * 1024 * 1024 / sizeof(TTEntry);
 
         // Round size down to powers of 2 for quick operations
-        maxEntries = 1ULL << (63 - clz64(maxEntries));
+        maxEntries = 1ULL << (63 - ChessEngine::Utils::clz64(maxEntries));
         mask = maxEntries - 1;
         entries = std::make_unique_for_overwrite<TTEntry[]>(maxEntries);
     }
