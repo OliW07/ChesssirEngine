@@ -16,7 +16,6 @@ using namespace precomputedData;
 using namespace ChessEngine::Utils;
 
 void Board::init() {
-    initZobristKeys();
     precomputeBitBoardMoves();
 }
 

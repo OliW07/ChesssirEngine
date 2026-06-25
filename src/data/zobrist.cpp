@@ -4,27 +4,32 @@
 
 #include "board.h"
 
-ZobristKeys Zobrist;
+const ZobristKeys& getZobristKeys() {
+    static const ZobristKeys keys = [] {
+        ZobristKeys k;
+        std::mt19937_64 rng(123456789);
 
-void initZobristKeys() {
-    std::mt19937_64 rng(123456789);
-
-    for (int piece = 0; piece < 6; piece++) {
-        for (int square = 0; square < 64; square++) {
-            Zobrist.pieceKeys[(size_t)Colour::White][piece][square] = rng();
-            Zobrist.pieceKeys[(size_t)Colour::Black][piece][square] = rng();
+        for (int piece = 0; piece < 6; piece++) {
+            for (int square = 0; square < 64; square++) {
+                k.pieceKeys[(size_t)Colour::White][piece][square] = rng();
+                k.pieceKeys[(size_t)Colour::Black][piece][square] = rng();
+            }
         }
-    }
 
-    for (int castlingRight = 0; castlingRight < 16; castlingRight++) {
-        Zobrist.castlingKeys[castlingRight] = rng();
-    }
+        for (int castlingRight = 0; castlingRight < 16; castlingRight++) {
+            k.castlingKeys[castlingRight] = rng();
+        }
 
-    for (int file = 0; file < 8; file++) {
-        Zobrist.enPassantKeys[file] = rng();
-    }
+        for (int file = 0; file < 8; file++) {
+            k.enPassantKeys[file] = rng();
+        }
 
-    Zobrist.sideKey = rng();
+        k.sideKey = rng();
+
+        return k;
+    }();
+
+    return keys;
 }
 
 uint64_t generateFullHash(Board& board) {
@@ -35,17 +40,17 @@ uint64_t generateFullHash(Board& board) {
             int loc = board.state.pieceList.list[colour][i];
             Pieces pieceType = (Pieces)(board.state.mailBox[loc] & ~8);
 
-            hash ^= Zobrist.pieceKeys[colour][pieceType][loc];
+            hash ^= getZobristKeys().pieceKeys[colour][pieceType][loc];
         }
     }
 
-    hash ^= Zobrist.castlingKeys[board.state.castlingRights];
+    hash ^= getZobristKeys().castlingKeys[board.state.castlingRights];
 
     if (board.state.enPassantSquare != -1)
-        hash ^= Zobrist.enPassantKeys[convertLocationToColumns(board.state.enPassantSquare)];
+        hash ^= getZobristKeys().enPassantKeys[convertLocationToColumns(board.state.enPassantSquare)];
 
     if (!board.state.whiteToMove)
-        hash ^= Zobrist.sideKey;
+        hash ^= getZobristKeys().sideKey;
 
     return hash;
 }
