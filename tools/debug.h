@@ -2,8 +2,6 @@
 
 #include <cstdint>
 
-#include "utils/Types.h"
-
+struct BoardState;
 void visualiseBitBoard(const uint64_t& bitBoard);
 void visualiseGraphicBoard(BoardState state);
-
