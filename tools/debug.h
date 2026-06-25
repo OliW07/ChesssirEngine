@@ -1,5 +1,4 @@
-#ifndef DEBUG
-#define DEBUG
+#pragma once
 
 #include <cstdint>
 
@@ -8,4 +7,3 @@
 void visualiseBitBoard(const uint64_t& bitBoard);
 void visualiseGraphicBoard(BoardState state);
 
-#endif

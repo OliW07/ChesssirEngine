@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <iostream>
 
-#include "utils/Types.h"
+#include "Types.h"
 
 void visualiseBitBoard(const uint64_t& bitBoard) {
     std::bitset<64> boardBitSet(bitBoard);
