@@ -50,7 +50,7 @@ target_include_directories(core
         src/core  
         src/include
         tools
-        tools/tests      
+        tests
 )
 
 add_executable(
@@ -70,13 +70,13 @@ target_link_libraries(chess_engine PRIVATE core)
 
     add_executable(
         unit_tests 
-        tools/tests/perftTest.cpp
-        tools/tests/searchTest.cpp
-        tools/tests/drawTest.cpp
-        tools/tests/zobristTest.cpp
-        tools/tests/TTTest.cpp
-        tools/tests/evalTest.cpp
-        tools/tests/moveOrderTest.cpp
+        tests/perftTest.cpp
+        tests/searchTest.cpp
+        tests/drawTest.cpp
+        tests/zobristTest.cpp
+        tests/TTTest.cpp
+        tests/evalTest.cpp
+        tests/moveOrderTest.cpp
         
     )
     target_link_libraries(unit_tests PRIVATE core gtest_main)
