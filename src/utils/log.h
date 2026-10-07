@@ -1,12 +1,11 @@
-#ifndef LOG_H
-#define LOG_H
+#pragma once
 
-#include <mutex>
+#include <filesystem>
 
 #include "Types.h"
 
-void log_uci(const std::string& msg, std::mutex& uci_mutex);
-void log_uci(const int depth, const int bestScore, const long long nodesVisited, Move pv,
-             std::chrono::time_point<std::chrono::steady_clock> startTime, std::mutex& uci_mutex);
+const std::filesystem::path UCI_LOG_PATH = std::filesystem::path(PROJECT_ROOT_DIR) / "logs" / "uci.log";
 
-#endif
+void log_uci(const std::string& msg);
+void log_uci(const int depth, const int bestScore, const long long nodesVisited, Move pv,
+             std::chrono::time_point<std::chrono::steady_clock> startTime);

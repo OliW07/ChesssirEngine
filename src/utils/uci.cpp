@@ -1,7 +1,6 @@
 #include "utils/uci.h"
 
 #include <chrono>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -17,9 +16,6 @@ void readLoop(Game& game) {
     std::string line;
 
     std::thread searchThread;
-    std::ofstream debugFile("engine_log.txt", std::ios::app);
-    debugFile << "--- Engine Started ---" << std::endl;
-
     std::setvbuf(stdout, NULL, _IONBF, 0);
 
     while (std::getline(std::cin, line)) {
@@ -28,7 +24,6 @@ void readLoop(Game& game) {
 
         if (line.empty())
             continue;
-        debugFile << "Received: " << line << std::endl;
 
         std::stringstream ss(line);
         std::string command;
@@ -36,13 +31,11 @@ void readLoop(Game& game) {
             continue;
 
         if (command == "uci") {
-            log_uci("id name chessirEngine 1.0", game.chesssir.uci_mutex);
-            log_uci("id author Oliver White", game.chesssir.uci_mutex);
-            log_uci("uciok", game.chesssir.uci_mutex);
-            debugFile << "Sent: uciok" << std::endl;
+            log_uci("id name chessirEngine 1.0");
+            log_uci("id author Oliver White");
+            log_uci("uciok");
         } else if (command == "isready") {
-            log_uci("readyok", game.chesssir.uci_mutex);
-            debugFile << "Sent: readyok" << std::endl;
+            log_uci("readyok");
 
         } else if (command == "position") {
             game.chesssir.stopRequested = true;
@@ -79,7 +72,7 @@ void readLoop(Game& game) {
                 searchThread.join();
             game.chesssir.stopRequested = false;
 
-            log_uci("info starting thinking", game.chesssir.uci_mutex);
+            log_uci("info starting thinking");
 
             std::string token;
             while (ss >> token) {
@@ -100,7 +93,6 @@ void readLoop(Game& game) {
             }
 
             searchThread = std::thread(&Engine::writeBestMove, &game.chesssir);
-            debugFile << "Search thread started." << std::endl;
 
         } else if (command == "stop") {
             game.chesssir.stopRequested = true;
@@ -144,8 +136,6 @@ void readLoop(Game& game) {
                 searchThread.join();
             break;
         }
-
-        debugFile.flush();
     }
 
     if (searchThread.joinable())

@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <mutex>
 
 #include "Types.h"
 #include "transpositionTable.h"
@@ -21,7 +20,6 @@ class Engine {
     int timeToThink;
     std::chrono::time_point<std::chrono::steady_clock> startTime;
     std::atomic<bool> stopRequested = false;
-    mutable std::mutex uci_mutex;
     TranspositionTable tt{512};
 
     Move search();

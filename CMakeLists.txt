@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.10)
 project(ChessEngine CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -37,6 +38,10 @@ add_library(core
     tools/perft.cpp
 )
 
+target_compile_definitions(core PUBLIC 
+    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 target_include_directories(core 
     PUBLIC 
         src  
@@ -57,7 +62,6 @@ target_link_libraries(chess_engine PRIVATE core)
       googletest
       URL https://github.com/google/googletest/archive/refs/heads/main.zip
     )
-    # Prevent GTest from overriding your compiler flags (optional but safer)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 
