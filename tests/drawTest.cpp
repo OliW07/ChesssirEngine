@@ -6,9 +6,9 @@
 #include "board.h"
 
 struct DrawPosition {
-    std::string fen;
-    std::string words;
-    bool isDraw;
+    std::string fen{};
+    std::string words{};
+    bool isDraw{};
 };
 
 class DrawTestFixture : public ::testing::TestWithParam<DrawPosition> {};

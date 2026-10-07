@@ -8,12 +8,12 @@
 enum class NodeType : uint8_t { Exact, Upperbound, Lowerbound };
 
 struct alignas(16) TTEntry {
-    uint64_t zhash;
-    int16_t eval;
-    uint16_t bestMove;
-    uint8_t depth;
-    uint8_t age;
-    NodeType type;
+    uint64_t zhash{};
+    int16_t eval{};
+    uint16_t bestMove{};
+    uint8_t depth{};
+    uint8_t age{};
+    NodeType type{};
 };
 
 Move unpackMove(uint16_t data);

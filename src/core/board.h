@@ -8,13 +8,13 @@
 #include "moveGenerator.h"
 
 struct SavedData {
-    int halfMoveClock;
-    int enPassantLoc;
-    uint8_t castlingRights;
-    Pieces capturedPiece;
-    bool enPassantCapture;
-    bool promotion;
-    uint64_t zhash;
+    uint64_t zhash{};
+    int halfMoveClock{};
+    int enPassantLoc{};
+    bool enPassantCapture{};
+    bool promotion{};
+    uint8_t castlingRights{};
+    Pieces capturedPiece{};
 };
 
 class Board {

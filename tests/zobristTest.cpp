@@ -7,8 +7,8 @@
 #include "gtest/gtest.h"
 
 struct GamePlay {
-    std::string fen;
-    std::string moves;
+    std::string fen{};
+    std::string moves{};
 };
 
 class GamePlayTestFixture : public ::testing::TestWithParam<GamePlay> {};

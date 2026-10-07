@@ -5,9 +5,9 @@
 #include "evaluate.h"
 
 struct Position {
-    std::string fen;
-    std::string words;
-    int eval;
+    std::string fen{};
+    std::string words{};
+    int eval{};
 };
 
 class EvalTestFixture : public ::testing::TestWithParam<Position> {};

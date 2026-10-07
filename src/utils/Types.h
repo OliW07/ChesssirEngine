@@ -60,36 +60,32 @@ struct BitboardView {
 };
 
 struct Occupancy {
-    uint64_t bitboards[ColourCount] = {};
-
+    uint64_t bitboards[ColourCount]{};
     uint64_t& operator()(Colour colour) { return bitboards[static_cast<size_t>(colour)]; }
 };
 
 struct BoardState {
-    BitboardView bitboards;
-    Occupancy occupancy;
+    // TODO: uint8 -> 'PackedPiece'
+    // least three significant bits represent the pieceType enum 0-5 for each piece,
+    // the 4th represents colour, white = 0
+    std::array<uint8_t, 64> mailBox = {};
+    PieceList pieceList{};
+    Occupancy occupancy{};
+    BitboardView bitboards{};
 
-    bool whiteToMove = 0;
-    bool whiteStarts = 1;
+    uint64_t zhash = 0ULL;
     int enPassantSquare = -1;
     int halfMoveClock = 0;
     int fullMoveClock = 0;
-
-    uint64_t zhash = 0ULL;
-
-    // least three significant bits represent the pieceType enum 0-5 for each piece, the 4th represents colour, white =
-    // 0
-    std::array<uint8_t, 64> mailBox = {};
-
-    PieceList pieceList;
-
+    bool whiteToMove = 0;
+    bool whiteStarts = 1;
     uint8_t castlingRights = 0;
 };
 
 struct Move {
     bool nullMove = false;
-    uint8_t to;
-    uint8_t from;
+    uint8_t to{};
+    uint8_t from{};
     Pieces promotionPiece = None;
     int orderScore = 0;
 
