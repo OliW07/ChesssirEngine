@@ -31,11 +31,11 @@ void readLoop(Game& game) {
             continue;
 
         if (command == "uci") {
-            log_uci("id name chessirEngine 1.0");
-            log_uci("id author Oliver White");
-            log_uci("uciok");
+            log(LogType::UCI_LOG, "id name chessirEngine 1.0");
+            log(LogType::UCI_LOG, "id author Oliver White");
+            log(LogType::UCI_LOG, "uciok");
         } else if (command == "isready") {
-            log_uci("readyok");
+            log(LogType::UCI_LOG, "readyok");
 
         } else if (command == "position") {
             game.chesssir.stopRequested = true;
@@ -72,7 +72,7 @@ void readLoop(Game& game) {
                 searchThread.join();
             game.chesssir.stopRequested = false;
 
-            log_uci("info starting thinking");
+            log(LogType::UCI_LOG, "info starting thinking");
 
             std::string token;
             while (ss >> token) {

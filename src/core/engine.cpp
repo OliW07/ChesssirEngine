@@ -32,7 +32,7 @@ Move Engine::search() {
         if (tt.probe(game.board.state.zhash, entry)) {
             bestRootMove = unpackMove(entry.bestMove);
             int absoluteEval = game.board.state.whiteToMove ? entry.eval : -entry.eval;
-            log_uci(currentDepth, absoluteEval, nodesVisited, bestRootMove, startTime);
+            logUci(currentDepth, absoluteEval, nodesVisited, bestRootMove, startTime);
         }
 
         if (std::abs(eval) > MATESCORE - 1000)
@@ -180,22 +180,14 @@ int Engine::quiescence(int alpha, int beta, int ply) {
 }
 
 void Engine::writeBestMove() {
-    std::ofstream df(LOG_FILE_PATH, std::ios::app);
-    df << "--- Thread Active ---" << std::endl;
-
-    log_uci("info string Chesssir is calculating...");
+    log(LogType::UCI_LOG, "info string Chesssir is calculating...");
 
     Move bestMove = search();
     std::string moveStr = convertMoveToAlgebraicNotation(bestMove);
 
-    df << "Search finished. Resulting Move: [" << moveStr << "]" << std::endl;
-
     if (!moveStr.empty()) {
-        log_uci("bestmove " + moveStr);
+        log(LogType::UCI_LOG, "bestmove " + moveStr);
     }
-
-    df << "Confirmed sent to GUI: bestmove " << moveStr << std::endl;
-    df.close();
 }
 
 bool Engine::abortSearch() {
