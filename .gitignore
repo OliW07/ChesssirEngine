@@ -45,7 +45,7 @@ perf*
 *~
 
 # Engine Logs
-*.txt
+logs/*
 
 .cache/
 compile_commands.json
