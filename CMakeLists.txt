@@ -48,6 +48,7 @@ target_include_directories(core
         src/data  
         src/utils
         src/core  
+        src/include
         tools
         tools/tests      
 )
